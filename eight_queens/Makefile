@@ -1,9 +1,9 @@
 CMD=gcc
 OPTS=-g -Wall
-IN=*.c
+IN=*.c modules/*.c
 OUT=main
 LIBS=-lm
-FILES=*.c include/*.h
+FILES=*.c modules/*.c include/*.h
 
 
 eight_queens: $(FILES)
