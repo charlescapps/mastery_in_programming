@@ -5,4 +5,8 @@
 
 #define MIN(x, y) ((x) < (y) ? x : y)
 
+long long unsigned int fact(int);
+
+long long unsigned int choose(int, int);  
+
 #endif 

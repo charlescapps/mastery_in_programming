@@ -14,7 +14,9 @@ typedef struct {
 	unsigned char c; 
 } position;
 
-board_t* get_solutions(int * num_solns, long long int * num_pos_searched);
+board_t* get_solutions(int * num_solns, long long int * num_queens_placed);
+
+board_t* get_solutions_mk2(int num_queens, int * num_solns, long long int * num_pos_searched);
 
 bool attacked(board_t b, position p); //Returns true IFF (r, c) is occupied or can be attacked by another queen
 

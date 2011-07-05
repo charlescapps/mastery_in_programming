@@ -19,31 +19,33 @@ void print_pos(position p) {
 	printf("Row=%d, Col=%d\n", p.r, p.c); 
 }
 
-//Prototpye for main workhorse function
-//Dynamically allocates board_t* solns since we don't apriori know how many solns there are
-//Assumes num_solns and num_pos_searched are already allocated on stack
-board_t* get_solutions(int * num_solns, long long int * num_pos_searched) {
+//Simply allocates an array of board_t 's of size MAX_SLNS
+//Could implement a dynamic array module in C but haven't bothered :-) 
+//Assumes num_solns and num_pos_searched are already allocated on stack, just modifies the value
+board_t* get_solutions(int * num_solns, long long int * num_queens_placed) {
 	
 	init_table(); 
 	board_t b = new_board(); 
 	board_t* solns = (board_t*)malloc(sizeof(board_t)*MAX_SLNS); 
 	int soln_i = 0; 
+	int tmp_num = 0; 
 	position p1, p2, p3, p4, p5, p6, p7, p8;
 
-	*num_pos_searched = 0; 
 	int i1, i2, i3, i4, i5, i6, i7, i8; 
 
 	for (i1 = 0; i1 <= NUM_POS - 8; i1++) {
 		p1 = int_to_pos[i1]; 
 		b[p1.r][p1.c] = true; 
+		tmp_num++;
+
 		for (i2 = i1 + 1; i2 <= NUM_POS - 7; i2++) {
 			p2 = int_to_pos[i2]; 
-			b[p2.r][p2.c] = true; 
 			if (attacked(b, p2)) {
 				//print_board(b);
-				b[p2.r][p2.c] = false; 
 				continue;
 			} 
+			b[p2.r][p2.c] = true; 
+			tmp_num++;
 
 			for (i3 = i2 + 1; i3 <= NUM_POS - 6; i3++) {
 				p3 = int_to_pos[i3]; 
@@ -51,6 +53,7 @@ board_t* get_solutions(int * num_solns, long long int * num_pos_searched) {
 					continue; 
 				}
 				b[p3.r][p3.c] = true; 
+				tmp_num++;
 
 				for (i4 = i3 + 1; i4 <= NUM_POS - 5; i4++) {
 					p4 = int_to_pos[i4]; 
@@ -58,6 +61,7 @@ board_t* get_solutions(int * num_solns, long long int * num_pos_searched) {
 						continue; 
 					}
 					b[p4.r][p4.c] = true; 
+					tmp_num++;
 
 					for (i5 = i4 + 1; i5 <= NUM_POS - 4; i5++) {
 						p5 = int_to_pos[i5]; 
@@ -65,6 +69,7 @@ board_t* get_solutions(int * num_solns, long long int * num_pos_searched) {
 							continue; 
 						}
 						b[p5.r][p5.c] = true; 
+						tmp_num++;
 	
 						for (i6 = i5 + 1; i6 <= NUM_POS - 3; i6++) {
 							p6 = int_to_pos[i6]; 
@@ -72,6 +77,7 @@ board_t* get_solutions(int * num_solns, long long int * num_pos_searched) {
 								continue; 	
 							}
 							b[p6.r][p6.c] = true; 
+							tmp_num++;
 
 							for (i7 = i6 + 1; i7 <= NUM_POS - 2; i7++) {
 								p7 = int_to_pos[i7]; 
@@ -79,6 +85,7 @@ board_t* get_solutions(int * num_solns, long long int * num_pos_searched) {
 									continue; 
 								}
 								b[p7.r][p7.c] = true; 
+								tmp_num++;
 
 								for (i8 = i7 + 1; i8 <= NUM_POS - 1; i8++) {
 									p8 = int_to_pos[i8]; 
@@ -87,6 +94,7 @@ board_t* get_solutions(int * num_solns, long long int * num_pos_searched) {
 									}	
 									else {
 										b[p8.r][p8.c] = true; 
+										tmp_num++;
 										solns[soln_i++] = clone_board(b); 						
 										b[p8.r][p8.c] = false; 
 									}
@@ -106,8 +114,14 @@ board_t* get_solutions(int * num_solns, long long int * num_pos_searched) {
 		b[p1.r][p1.c] = false; //clear queen position when you get to the end of the iteration
 	}
 	*num_solns = soln_i; 
+	*num_queens_placed = tmp_num; 
 
 	return solns; 
+}
+
+board_t* get_solutions_mk2(int num_queens, int* num_solns, long long int* num_pos_searched) {
+
+	return NULL; 
 }
 
 bool attacked(board_t b, position p) {
