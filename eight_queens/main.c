@@ -2,27 +2,26 @@
 #include "include/board.h"
 #include "include/eight_queens.h" 
 
-extern const int B_SIZE; //Import constant from board.c
-
 int main() {
 
 
-	board_t * solns = NULL; 
 	int num_solns = -1; 
 	long long int num_pos_searched = -1; 
 
-	get_solutions(solns, &num_solns, &num_pos_searched); 	
+	board_t* solns = get_solutions(&num_solns, &num_pos_searched); 	
 
-	board_t blank_b = new_board(); 
+	int i; 
+	for (i = 0; i <= num_solns-3; i+=3) {
+		printf("Soln. nos %d, %d, %d:\n", i+1, i+2, i+3); 
+		print_boardsx3(solns[i], solns[i+1], solns[i+2] ); 
+	}
 
-	printf("Extern int B_SIZE: %d\n", B_SIZE); 
+	for ( ; i < num_solns; i++) {
+		printf("Soln. no %d:\n", i+1); 
+		print_board(solns[i]); 
+	}	
 
-	printf("Blank board:\n"); 
-	print_board(blank_b); 
 
-	printf("Clone:\n"); 
-	print_board(clone_board(blank_b)); 
 	
-
 	return 0; 
 }

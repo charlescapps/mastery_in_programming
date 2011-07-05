@@ -6,8 +6,20 @@
 #include <math.h>
 #include <stdbool.h>
 
-void get_solutions(board_t* solns, int * num_solns, long long int * num_pos_searched);
+const int NUM_POS;  
+const int MAX_SLNS; 
 
-bool attacked(board_t b, int r, int c); //Returns true IFF (r, c) is occupied or can be attacked by another queen
+typedef struct {
+	unsigned char r; 
+	unsigned char c; 
+} position;
+
+board_t* get_solutions(int * num_solns, long long int * num_pos_searched);
+
+bool attacked(board_t b, position p); //Returns true IFF (r, c) is occupied or can be attacked by another queen
+
+void init_table(); 
+
+void print_pos(position p); 
 
 #endif
