@@ -33,3 +33,39 @@ long long unsigned int choose(int n, int k) {
 	return val / fact(k);
 
 }  
+
+int* format_commas(unsigned long long int num, int * num_chunks) {
+
+	(*num_chunks) = log10(num) / 3 + 1; 
+
+	int* chunks = (int*) malloc(sizeof(int)*(*num_chunks)); 
+
+	int i; 
+	for (i = 0; i < *num_chunks; i++) {
+		chunks[(*num_chunks) - i - 1] = num % 1000;
+		num /= 1000;  	
+	}	
+
+	return chunks; 
+
+}
+
+char* print_commas(unsigned long long int n) {
+	int num_chunks; 
+	int* chunks = format_commas(n, &num_chunks); 
+	char* pretty = (char*) malloc(sizeof(char)*(5*num_chunks+1)); 
+	pretty[0] = '\0'; 
+	char buffer[100]; 
+
+	int i; 
+	for (i = 0; i < num_chunks - 1; i++) {
+		sprintf(buffer, "%d,", chunks[i]); 
+		strcat(pretty, buffer); 
+	}	 
+	sprintf(buffer, "%d", chunks[i]);
+
+	strcat(pretty, buffer);  
+
+	return pretty; 
+
+}

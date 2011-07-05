@@ -23,11 +23,13 @@ int main() {
 
 	//Output total number of ways to place 8 queens
 	//Checked result with Wolfram Alpha to make sure no overflow occurred
-	printf("Total no. of ways to place 8 queens on distinct squares\n\t=(64 choose 8) = %llu\n\n", choose(64, 8)); 
+	printf("Total no. of ways to place 8 queens on distinct squares\n\t=(64 choose 8) = %s\n\n", print_commas(choose(64, 8))); 
 
 	//Number of queens placed. This is the only real measure I can think of for the possibilities my program searches
 	//It doesn't ever place 8 queens unless we have arrived at a solution
-	printf("Number of queens placed: %llu\n", num_queens_placed); 
+	printf("Number of queens placed= %s\n\n", print_commas(num_queens_placed));
+
+	printf("Infer that 'backtracking' massively reduces search space!\n");  
 	
 	return 0; 
 }
