@@ -19,9 +19,10 @@ void print_pos(position p) {
 	printf("Row=%d, Col=%d\n", p.r, p.c); 
 }
 
-//Simply allocates an array of board_t 's of size MAX_SLNS
+//Allocates an array of board_t 's of size MAX_SLNS to store solutions in. 
 //Could implement a dynamic array module in C but haven't bothered :-) 
-//Assumes num_solns and num_pos_searched are already allocated on stack, just modifies the value
+//Assumes num_solns and num_queens_placed are already allocated on stack, just modifies the value
+//This is kind of a horrid solution with 8-level nested for-loops. See get_solutions_mk2 for a better solution
 board_t* get_solutions(int * num_solns, long long int * num_queens_placed) {
 	
 	init_table(); 
@@ -119,9 +120,58 @@ board_t* get_solutions(int * num_solns, long long int * num_queens_placed) {
 	return solns; 
 }
 
-board_t* get_solutions_mk2(int num_queens, int* num_solns, long long int* num_pos_searched) {
+board_t* get_solutions_mk2(int* num_solns, long long int* num_iterations) {
 
-	return NULL; 
+
+	int* q_pos = (int*)malloc(sizeof(int)*B_SIZE); //Allocate 8 integers representing the column of each queen, assuming queen i is in row i
+	memset(q_pos, 0, sizeof(int)*B_SIZE); //Initialize queens to column 0
+	board_t b = new_board(); 			//The temp board object used 
+	board_t* solns = (board_t*)malloc(sizeof(board_t)*MAX_SLNS); //The collection of solutions
+
+	//Other variables to be used in loop
+	int q_index = 0, soln_i = 0; 
+	position p; 
+	int iterations = 0; 
+
+	while (q_pos[0] < B_SIZE) {
+		iterations++; 
+		p.r = q_index; p.c = q_pos[q_index]; //Get the position of the currently considered queen
+
+		while ( (p.c < B_SIZE) && attacked(b, p)) p.c++; //Find the first col s.t. this queen isn't attacked
+
+		if (p.c < B_SIZE) { //If we are at a valid board position
+			if (q_index == B_SIZE - 1) { //If we're placing the final queen, add board to solutions
+				place_b(p, b); 
+			//	print_board(b); 
+				solns[soln_i++] = clone_board(b); 	
+				remove_b(p, b); 
+				q_pos[q_index] = p.c + 1; //Increment so we evaluate new positions, avoid infinite loop
+				continue; 
+			}
+			//Else if q_index < B_SIZE - 1...my style is to not use else's when they are not necessary due to continue/return/etc.
+			q_pos[q_index++] = p.c; //Store the position of this queen for later removal
+			place_b(p, b); //If we're not placing the final queen, place on board and go to next queen
+			q_pos[q_index] = 0; //When we first evaluate a queen for a given set of previous queens, we must start at 0 to 
+								//ensure all combinations are considered
+			continue;   
+			
+		}
+
+		if (q_index <= 0) {
+			break; //If we got to the end of the column for queen 0, this implies we have exhausted all combinations
+		}
+		
+		//q_pos[q_index] = 0; //Reset index since we're failed with this branch
+		p.r = --q_index; p.c = q_pos[q_index];  
+		remove_b(p, b); //Remove previous queen from board
+		q_pos[q_index]++; //Incr position of previous queen
+
+	}
+
+	(*num_iterations) = iterations; 
+	(*num_solns) = soln_i; 
+	return solns; 
+	
 }
 
 bool attacked(board_t b, position p) {

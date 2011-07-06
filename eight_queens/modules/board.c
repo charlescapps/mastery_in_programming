@@ -80,3 +80,11 @@ board_t clone_board(board_t board) {
 
 	return clone; 
 }
+
+void place_b(position p, board_t b) {
+	b[p.r][p.c] = true; 
+} 
+
+void remove_b(position p, board_t b) {
+	b[p.r][p.c] = false; 
+} 

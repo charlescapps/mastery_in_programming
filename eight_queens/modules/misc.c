@@ -57,15 +57,42 @@ char* print_commas(unsigned long long int n) {
 	pretty[0] = '\0'; 
 	char buffer[100]; 
 
+	char* pad = NULL; 
 	int i; 
 	for (i = 0; i < num_chunks - 1; i++) {
-		sprintf(buffer, "%d,", chunks[i]); 
+
+		pad = (i > 0 ? get_padding(chunks[i]): ""); 
+		sprintf(buffer, "%s%d,", pad, chunks[i]); 
 		strcat(pretty, buffer); 
 	}	 
-	sprintf(buffer, "%d", chunks[i]);
+	
+	
+	pad = (i > 0 ? get_padding(chunks[i]): ""); 
+	sprintf(buffer, "%s%d", pad, chunks[i]);
 
 	strcat(pretty, buffer);  
 
 	return pretty; 
 
+}
+
+char* get_padding(int num) {
+	int padding = 0; 
+	char* pad = NULL; 
+
+	if (num >=100) {
+		padding = 0; 
+	}
+	else if (num >=10) {
+		padding = 1; 
+	}
+	else if (num >= 1) {
+		padding = 2; 
+	}
+	else padding = 3; 
+
+	pad = (char*)malloc((padding+1)*sizeof(char));
+	memset(pad, '0', (padding)*sizeof(char)); 
+	pad[padding] = '\0'; 
+	return pad; 
 }
