@@ -1,4 +1,4 @@
-#include "../include/arithmetic.h"
+#include "arithmetic.h"
 
 
 const int DIVIDE_BY_ZERO = -1; 

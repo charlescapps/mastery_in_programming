@@ -1,12 +1,12 @@
 CMD=gcc
 OPTS=-g -Wall
-IN=*.c modules/*.c
+IN=*.c
 OUT=main
 LIBS=-lm
-FILES=*.c modules/*.c include/*.h
+FILES=*.c *.h
 
 
-eight_queens: $(FILES)
+arithmetic: $(FILES)
 	$(CMD) $(OPTS) $(IN) -o $(OUT)
 
 clean: 
