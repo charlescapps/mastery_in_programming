@@ -10,7 +10,7 @@ const char* USAGE = "game_of_life <num_rows> <num_cols> <input_file> <num_evolut
 					"\tnum_cols : specify number of cols in game of life <= 1024.\n"
 					"\tinput_file : specify input file name. If file does not contain a rectangle of O's and X's with given rows/cols an error will occur.\n" 
 					"\tnum_evolutions : specify number of iterations to perform in game of life <= 1024.\n"
-					"\tpause_time_s : specify time in seconds to pause between each evolution for your viewing pleasure\n"
+					"\tpause_time_ms : specify time in milliseconds to pause between each evolution for your viewing pleasure\n"
 					"\t--help or -? : show this usage and exit\n"; 
 
 const int MAX_ROWS_COLS = 1024; //max allowed rows / cols
@@ -34,7 +34,7 @@ int main(int argc, char** args) {
 	unsigned int pause_time = 0; //Default pause
 
 	if (argc == 6 ) { //If the optional pause time argument is present
-		pause_time = atoi(args[5]);
+		pause_time = atoi(args[5])*1000; //Convert milliseconds to microseconds for usleep function
 	}
 
 	if (rows < 1 || rows > MAX_ROWS_COLS || cols < 1 || cols > MAX_ROWS_COLS) {//If invalid number of rows / cols is given, exit
@@ -72,7 +72,7 @@ int main(int argc, char** args) {
 		printf("****************EVOLUTION %d****************\n", i + 1); 
 		print_game(my_game); //Print game
 		free_game(prev_game); //Free previous game
-		sleep(pause_time); 
+		usleep(pause_time); 
 	}
 
 	return 0; 
