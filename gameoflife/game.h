@@ -5,8 +5,12 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "macros.h"
+
 const char ALIVE;
 const char DEAD;
+const char* INPUT_FILE_ALIVE; 
+const char* INPUT_FILE_DEAD; 
 
 typedef struct { //Board is just 2d array of chars. Could have used bools, arbitrarily decided to go with chars for more expressiveness. 
 	int rows; 
@@ -25,6 +29,10 @@ void free_game(game* g); //Frees memory dynamically allocated for this game. Do 
 
 game* evolve(game* g); //Evolves game of life by one step and stores in a new game object. Client must free old games with free_game if desired.
 
+game* evolve_torus(game* g); //Same as evolve, but game wraps around vertically and horizontally
+
 int neighbors(game* g, int r, int c); //Helper function - count number of living neighbors
+
+int neighbors_torus(game* g, int r, int c); //Helper function - count number of living neighbors
 
 #endif

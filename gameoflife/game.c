@@ -1,7 +1,9 @@
 #include "game.h"
 
 const char ALIVE = 'O'; 
-const char DEAD = 'X';
+const char DEAD = ' ';
+const char* INPUT_FILE_ALIVE = "O"; 
+const char* INPUT_FILE_DEAD = "X";
 
 game* new_game(int rows, int cols) {
 
@@ -64,10 +66,108 @@ game* evolve(game* g) {
 	
 	game* next = clone_game(g); //Clone game for evolution
 
-	int i, j; 
+	int i, j, neighbor_cnt; 
 	for (i = 0; i < g->rows; i++) {
 		for (j = 0; j < g->cols; j++) {
-				
+			neighbor_cnt = neighbors(g, i, j); 			
+			if (g->board[i][j] == ALIVE) { //ALIVE case
+				if (neighbor_cnt == 2 || neighbor_cnt ==3) {
+					; //Do nothing, stays alive
+				}
+				else {
+					next->board[i][j] = DEAD; //Else it dies
+				}
+			}
+			else { //DEAD case
+				if (neighbor_cnt == 3) { //If it has 3 living neighbors, it comes back to life
+					next->board[i][j] = ALIVE; 
+				}
+			}
 		}
 	}
+
+	return next; 
+}
+
+game* evolve_torus(game* g) {
+	
+	game* next = clone_game(g); //Clone game for evolution
+
+	int i, j, neighbor_cnt; 
+	for (i = 0; i < g->rows; i++) {
+		for (j = 0; j < g->cols; j++) {
+			neighbor_cnt = neighbors_torus(g, i, j); 			
+			if (g->board[i][j] == ALIVE) { //ALIVE case
+				if (neighbor_cnt == 2 || neighbor_cnt ==3) {
+					; //Do nothing, stays alive
+				}
+				else {
+					next->board[i][j] = DEAD; //Else it dies
+				}
+			}
+			else { //DEAD case
+				if (neighbor_cnt == 3) { //If it has 3 living neighbors, it comes back to life
+					next->board[i][j] = ALIVE; 
+				}
+			}
+		}
+	}
+
+	return next; 
+}
+
+int neighbors(game* g, int r, int c) {
+	if (r < 0 || r > (g->rows - 1) || c < 0 || c > (g->cols - 1)) {
+		printf("Invalid row or col passed to neighbors functions.\n"); 
+		return -1; 
+	}
+
+	int cnt = 0; 
+
+	char** b = g->board; 
+
+	int i, j; 
+	int r_lb = MAX(0, r-1), r_ub = MIN(g->rows - 1, r + 1); //Must have 0 <= r < rows 
+	int c_lb = MAX(0, c-1), c_ub = MIN(g->cols - 1, c + 1); //Must have 0 <= c < cols
+	for (i = r_lb; i <= r_ub; i++) {
+		for (j = c_lb; j <= c_ub; j++) {
+			if (b[i][j] == ALIVE && (i != r || j != c)) { //If a neighbor is alive and it's not the center point
+				cnt++; 
+			}
+		}	
+	}	
+	return cnt; 
+}
+
+int neighbors_torus(game* g, int r, int c) {
+
+	if (r < 0 || r > (g->rows - 1) || c < 0 || c > (g->cols - 1)) {
+		printf("Invalid row or col passed to neighbors functions.\n"); 
+		return -1; 
+	}
+
+	int cnt = 0; 
+
+	char** b = g->board; 
+
+	int i, j, i_mod, j_mod; 
+	for (i = r - 1; i <= r + 1; i++) {
+		for (j = c - 1; j <= c + 1; j++) { //Calculate neighbors with modulo arithmetic to use torus topology
+			if (i == r && j == c) {
+				continue; //Do not count the center cell in calculation
+			}
+			i_mod = i; 	
+			j_mod = j; 
+			if (i_mod < 0) i_mod = g->rows + i_mod; //i wraps around left
+			if (j_mod < 0) j_mod = g->cols + j_mod; //j wraps around top
+			if (i_mod > g->rows - 1) i_mod -= g->rows; //i wraps around right
+			if (j_mod > g->cols - 1) j_mod -= g->cols; //j wraps around right
+			if (b[i_mod][j_mod] == ALIVE) { //If a neighbor is alive and it's not the center point
+				cnt++; 
+			}
+		}	
+	}	
+	return cnt; 
+
+
 }
