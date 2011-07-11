@@ -1,0 +1,3 @@
+The asymmetry in generation 4 is due to the object below the leftmost oval shape. In generation 3, two of the cells at the bottom of the leftmost oval
+are affected by also bordering the other object. As a result, one cell that would have come to life stays dead due to > 3 neighbors; another cell that would 
+have stayed dead instead comes to life due to having exactly 3 neighbors. 
