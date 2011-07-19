@@ -1,0 +1,175 @@
+
+
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{fullpage}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{amssymb}
+
+%Some nonsense I found in a LaTeX guide to make pretty code :-) 
+\lstset{ 
+language=Java,                % choose the language of the code
+basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+numbers=left,                   % where to put the line-numbers
+numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
+stepnumber=1,                   % the step between two line-numbers. If it is 1 each line will be numbered
+numbersep=5pt,                  % how far the line-numbers are from the code
+backgroundcolor=\color{white},  % choose the background color. You must add \usepackage{color}
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+frame=single,   		% adds a frame around the code
+tabsize=2,  		% sets default tabsize to 2 spaces
+captionpos=b,   		% sets the caption-position to bottom
+breaklines=true,    	% sets automatic line breaking
+breakatwhitespace=false,    % sets if automatic breaks should only happen at whitespace
+escapeinside={\%}{)}          % if you want to add a comment within your code
+}
+
+\begin{document}
+\begin{center} 
+\textbf{\Huge{Unix Profiling Tools for C} \\
+\LARGE{gprof and gcov applied to Conway's Game of Life}} \\
+\LARGE{CS 510, Summer 2011} \\
+\LARGE{\textbf{Author}: Charles L. Capps\\
+\textbf{Last edited}: \today\\ 
+\textbf{Due}: July 18th, 2011\\
+}
+\end{center}
+
+\section{Purpose}
+The purpose of this paper is to analyse several common Unix profiling and coverage tools for the C language. We examine \verb=gprof= for profiling and \verb=gcov= for line-by-line analysis and statement coverage. The \verb=time= command will be used to measure time spent in user code, time spent in system code, and the total time. The study of these tools is necessarily intertwined with the \verb=gcc= compiler. 
+
+Performance will be measured for different levels of \verb=gcc= optimisation with examples drawn from the author's implementation of Conway's game of life. Several optimisations of the code will be implemented, and the change in performance will be measured. The resultant data from \verb=gprof= and \verb=gcov= will be examined for every combination of \verb=gcc= optimization and code improvement. 
+
+In addition, optimisations made by \verb=gcc= are inferred. For example, when a function is ``inlined'' by \verb=gcc= it will no longer appear in the \verb=gprof= results. This highlights the importance of running \verb=gprof= and \verb=gcov= \emph{without compiler optimisations}. We demonstrate other issues one encounters when trying to profile optimised code. 
+
+\section{Method: How this is accomplished}
+Each run of the Game of Life consists of 1024 evolutions starting from a fixed input of size \verb=42x89=. The input is given in the Appendix. The input has a ``Gosper glider gun'' and a pulsar. The Gosper glider gun is the first example of a structure in the Game of Life that has unbounded growth, discovered by Gosper in 1970. It makes gliders, which eventually wrap around and destroy the glider gun. 
+
+Four versions of the most performance-critical function (\verb=get_neighbors_torus=) are presented. This function counts the living neighbors of a cell by wrapping the left side of the rectangle to the right side, and the top to the bottom, like a torus. It's the most performance-critical function, because it's called for every cell, for every evolution.
+
+\begin{verbatim}
+(1024 evolutions)x(42 rows)x(89 columns) = 3,827,712 calls to get_neighbors_torus
+\end{verbatim}
+
+ Version 1 of \verb=get_neighbors_torus= is the naive initial implementation. Version 2 makes the easy optimisation of defining constants for the bounds of the loops instead of referring to \verb=game->rows= inside a struct. We'd expect this to eliminate some memory accesses. Version 3 improves the structure of the \verb=if-else= statements inside the loop that counts living neighbors and eliminates checking that the input row and column are within bounds. Version 4 is more daring: in version 4 the \verb=new_game= function is modified to \verb=malloc= the required memory for a game of life in a single block (instead of allocating the row pointers and the space for each row separately). The author's hope is that this will reduce cache misses by increasing spatial locality. Loop unrolling will also be explored later.  
+
+Standard statistical analysis is applied. A bash script is used to run each combination of \verb=gcc= optimisation and code version 100 times. Each final data point is given by the average of 100 runs, with error bars equal to the standard deviation. The distribution of times is assumed to be Gaussian, but some data is fit to a Gaussian to verify this assumption. 
+
+The results are graphed with error bars using Libre Office. 
+
+\section{Alternative tools}
+One of the most notable alternative tools is \verb=valgrind=. Many of the features of \verb=valgrind= overlap with the features of \verb=gprof= and \verb=gcov=. For example, the \verb=cachegrind= tool included with \verb=valgrind= will annotate code with branch probabilities and the number of times each line was executed. \verb=gcov= provides the same features. \verb=cachegrind= will also output the number of times each function was called, much like \verb=gprof=. The \verb=cachegrind= manual can be found here: \url{http://valgrind.org/docs/manual/cg-manual.html} .\verb=cachegrind= can also annotate assembly code; and it can determine cache miss rate. Time permitting, \verb=cachegrind= will also be studied.  
+
+As an alternative to \verb=time=, the author could have used \verb=get_time_of_day= to measure elapsed time in microseconds, or \verb=clock_gettime= to measure time in nanoseconds. These functions may be examined if time permits, but the primary purpose of this report is to study \emph{command-line tools}. If we give the CPU plenty of work to do, the \verb=time= command is more than sufficiently precise. Also, it has the advantage that it measures the time spent in kernel code (system time) and the total time including context switches. Arguably, the total time is the ultimate measure of performance!  
+
+\section{Justification for tools used}
+
+\section{Discussion of techniques used}
+
+\section{Where are these techniques used}
+
+\section{Results}
+
+Following is a graph of the 'real time' (total time) measured by the unix \verb=time= command (see Figure 1). As mentioned above, each datapoint represents 100 runs of the game of life; each run is 1024 evolutions starting from the input given in the appendix. 
+
+A few things are interesting to note. Each version of the code improves performance, except for version 4 with level 0 optimisation. With level 5 optimisation, there is a very slight improvement. From this graph one could infer that the strategy of allocating all the rows of a board contiguosly in memory doesn't significantly improve performance, if at all (the error bars of the version 4 datapoint overlap with the error bars of the version 3 datapoint with level 5 optimisation). 
+
+It's also interesting that the O5 optimisation data has significantly higher standard deviations. Apparently some optimisations that \verb=gcc= implements cause the performance to be more nondeterministic (the performance varies more from run to run).   
+ 
+\begin{figure}[H] 
+\centering
+\caption{Real time (total time), as measured by the unix `time' utility.}
+\includegraphics[scale=.45]{real_time.png}
+\label{}
+\end{figure}
+
+Next is the graph of the system time for both levels of optimisation (Figure 2). Here it appears that the different versions of the code improve performance for level 0 optimisation. Performance is relatively constant for level 5 optimisation. However, this would be an invalid inference. The standard deviations are so high that we can't infer anything about how the different versions of the code affect the system performance. 
+
+It's unfortunate that no conclusion can be reached about the effect of the code improvements on system performance. The experiment could be repeated with more runs or a greater amount of work per run to reduce this error. 
+
+The last data from the \verb=time= command is given in Figure 3 below. This gives the time spent in user code. This data supports the hypothesis that allocating all memory for the game of life contiguously improves performance by increasing spatial locality. In each successive version, the level 0 optimisation performance gets better. For level 5 optimisation, the difference between version 3 and version 4 of the code is negligible. 
+
+One can argue that the level 5 optimisation probably makes an improvement similar to what version 4 of the code accomplishes. Therefore, the difference between version 4 and version 5 with O5 optimisation is small. With level 0 optimisation a significant improvement occurs between version 3 and version 4. In fact, the improvement is greater than the improvement between version 2 and version 3!  
+
+Therefore, the system time (or context switching) must account for the lack of improvement seen in the `real time' data. Since we are really interested in the time it takes to run the user code, it appears the version 4 code improvement is useful after all. Again, the experiment could be repeated with more runs or a larger amount of work per run so that the effect of context switching and system code is less important. 
+\begin{figure}[H]  
+\centering
+\caption{System time, as measured by the unix `time' utility.}
+\includegraphics[scale=.40]{system_time.png}
+\label{}
+\end{figure}
+
+
+
+
+
+\begin{figure}[H]   
+\centering
+\caption{User time, as measured by the unix `time' utility.}
+\includegraphics[scale=.40]{user_time.png}
+\label{}
+\end{figure}
+
+\section{Example output and code} 
+
+\section{Conclusion}
+
+\section{References}
+
+\newpage
+\section{Appendix: Game of Life Input}
+\begin{verbatim}
+  1 +-----------------------------------------------------------------------------------------+
+  2 |                                                                                         |
+  3 |                         O                                                               |
+  4 |                       O O                                                               |
+  5 |             OO      OO            OO                                                    |
+  6 |            O   O    OO            OO                                                    |
+  7 | OO        O     O   OO                                                                  |
+  8 | OO        O   O OO    O O                                                               |
+  9 |           O     O       O                                                               |
+ 10 |            O   O                                                                        |
+ 11 |             OO                                                                          |
+ 12 |                                                                                         |
+ 13 |                                                                                         |
+ 14 |                                                                                         |
+ 15 |                                                                                         |
+ 16 |                                                                                         |
+ 17 |                                                                                         |
+ 18 |                                                                                         |
+ 19 |                                                                                         |
+ 20 |                                                                                         |
+ 21 |                                                                                         |
+ 22 |                                                                                         |
+ 23 |                                                        OOOOOOOOOO                       |
+ 24 |                                                                                         |
+ 25 |                                                                                         |
+ 26 |                                                                                         |
+ 27 |                                                                                         |
+ 28 |                                                                                         |
+ 29 |                                                                                         |
+ 30 |                                                                                         |
+ 31 |                                                                                         |
+ 32 |                                                                                         |
+ 33 |                                                                                         |
+ 34 |                                                                                         |
+ 35 |                                                                                         |
+ 36 |                                                                                         |
+ 37 |                                                                                         |
+ 38 |                                                                                         |
+ 39 |                                                                                         |
+ 40 |                                                                                         |
+ 41 |                                                                                         |
+ 42 |                                                                                         |
+ 43 |                                                                                         |
+ 44 +-----------------------------------------------------------------------------------------+
+
+
+\end{verbatim}
+
+\end{document} 

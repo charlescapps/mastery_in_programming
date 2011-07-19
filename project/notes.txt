@@ -1,0 +1,50 @@
+time - gives info about how long a binary ran. User code, kernel code, and actual time
+
+
+gcc
+--------------------------------------------------------------
+-pg : profiling information for gprof
+-Q : compiler prints out each function name as it's compiled
+
+
+gprof
+--------------------------------------------------------------
+Must use -pg option with gcc, then run the program. 
+Produces gmon.out, then you can run gprof. 
+
+	Gives flat profile and call graph. Flat profile just lists
+percentage of total time spent in each function. 
+	Call graph is trickier, do not completely grok the output. 
+
+gcov
+--------------------------------------------------------------
+Must use gcc with --coverage option for this to work. 
+Uses .gcno files output by running your binary. 
+
+gcov -b <source_file> is the option I used. 
+	-lists probabilities that branches were taken
+
+Notes on improvements made to game of life
+--------------------------------------------------------------
+neighbors_torus function takes up 95% of time in a flat profile. 
+Counts the neighbors of a given cell using torus topology. 
+To learn about gprof, attempt to optimize this function in 
+various ways and see the results. 
+
+Note-it's difficult to measure the time it takes to run the 
+program, because there's a high standard deviation. Consider 
+plotting the distribution, the median would be a better 
+measure of the time it takes to run a program. 
+	-could also time in code. Debug flags to enable/disable?
+
+First improvement: made loop bounds constants instead of calling board->rows 
+every time. 
+	-According to gprof, reduced time to call neighbors_torus
+
+Then, commented out error-checking and optimized some if-else 
+statements. 
+	-at Optimization level 5, gcc then inlined the neighbors_torus. 
+	-gprof did not list the function since it was inlined into evolve_torus 
+
+Finally, did malloc differently so that a game object is allocated in one contiguous
+location, instead of a different malloc for each row. 
