@@ -1,13 +1,13 @@
 CMD=gcc
-OPTS=-g -pg -Wall
+OPTS=-g -Wall
 IN=main.c modules/*.c
 OUT=main
 LIBS=
 FILES=main.c include/*.h modules/*.c
-OPTIM=-O5
+OPTIM=-O0
 
 main: $(FILES)
-	$(CMD) $(OPTIM) $(OPTS) $(IN) $(LIBS) -o $(OUT)
+	$(CMD) $(OPTIM) $(OPTS) $(IN) -o $(OUT)
 
 clean: 
 	rm -f $(OUT)

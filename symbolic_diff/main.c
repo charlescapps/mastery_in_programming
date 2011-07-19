@@ -7,6 +7,11 @@ int main() {
 
 	read_expression(); 
 
+	parse(); 
+
+	if (parse_succeeded()) {
+		printf("Parse succeeded!\n"); 
+	}
 
 	return 0;
 }
