@@ -13,10 +13,10 @@ int main() {
 		print_parse_tree(); //Print the expression with all parens indicating how we associated.
 
 		take_derivative(); 
-
 		printf("Derivative of f(x) = "); 
 		print_derivative(); 
 
+		simplify_derivative(); 
 		printf("Simplified f'(x) = "); 
 		print_simplified(); 
 	}

@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 //***********************CONSTANTS***************************************
 
@@ -94,7 +95,7 @@ node_ptr derivative_recurse(node_ptr);
 
 void simplify_derivative(void); 
 
-void simplify_recurse(node_ptr); 
+node_ptr simplify_recurse(node_ptr); 
 //************************CONVENIENCE / STRING FUNCTIONS*****************************
 
 bool is_whitespace(char c);

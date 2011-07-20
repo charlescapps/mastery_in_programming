@@ -301,7 +301,6 @@ node_ptr expression() {
 	}
 
 	return expr_root; 
-	
 } 
 
 node_ptr term() {
@@ -323,7 +322,6 @@ node_ptr term() {
 	}
 
 	return term_root; 
-
 }
 
 node_ptr factor() {
@@ -566,38 +564,133 @@ node_ptr derivative_recurse(node_ptr current) {
 
 void simplify_derivative(void) {
 	simplified_deriv = clone_tree(derivative_tree); 
-	simplify_recurse(simplified_deriv); 	
+	simplified_deriv = simplify_recurse(simplified_deriv); 	
 }
 
-void simplify_recurse(node_ptr current) {
+node_ptr simplify_recurse(node_ptr current) {
 
+	//*****************************BASE CASES: current is NULL or current is a number, variable, or constant*******************
 	if (current == NULL) {
-		return; 
+		return NULL; 
 	}
 
-	simplify_recurse(current -> left); //simplify left, right, then attempt to simplify current node. 
-	simplify_recurse(current -> right); 
+	if (current -> nclass == NUMBER || current -> nclass == VARIABLE || current -> nclass == CONSTANT) {
+		return current; //Nothing to simplify
+	}
 
-	if (current -> nclass == MULT_OP) {
-		if (current -> left -> nclass == NUMBER && current -> right -> nclass == NUMBER) { //Multiply two literal numbers. 
-			current -> nclass = NUMBER; 
-			current -> number = (current->left->number)*(current->right->number); 
+	current -> left = simplify_recurse(current -> left); //simplify left, right, then attempt to simplify current node. 
+	current -> right = simplify_recurse(current -> right); 
 
-			if (current -> number < 0 || current -> number > 9) {
-				current -> symbol = BIG_NUMBER; //Indicates to the print_tree_parens function to print the whole number, not just the symbol
-			}
-			else {
-				current -> symbol = '0' + current -> number; 
-			}
+	//**********************************Simplify log of 1 = 0********************************************************************
+	if (current -> nclass == LOG_OP) {
+		assert(current -> right == NULL); //Assert log only has 1 argument
 
-			free_tree(current -> left); //free old memory for children
-			free_tree(current -> right);
-
-			current -> left = current -> right = NULL;  
+		//Check if argument is 1
+		if ( (current -> left -> nclass == NUMBER) && (current -> left -> number == 1) ) {
+			free_tree(current); 
+			return new_number(0); 
 		}
 
-		return; //Nothing else to do if we reduced it to a single number	
-	}	
+		return current; 
+	}
+
+	//********************************SIMPLIFY +,-,*,/,^ applied to 2 numbers*****************************************************
+	if ( (current -> left -> nclass == NUMBER) && (current -> right -> nclass == NUMBER) ) { //case for simplifying binary op on two literal numbers
+		int num_1 = current->left -> number; 
+		int num_2 = current->right -> number; 
+		int result; 
+
+		switch(current -> symbol) {
+			case ('*') : 
+				result = num_1*num_2; 
+				break; 
+			case ('/') : 
+				assert(num_2 != 0); //Assert we aren't dividing by 0
+				result = num_1 / num_2; 
+				break; 
+			case ('+') : 
+				result = num_1 + num_2; 
+				break; 
+			case ('-') : 
+				result = num_1 - num_2; 
+				break; 
+			case ('^') : 
+				if (num_1 == 0) { //Assert we don't have 0^0 or division by 0
+					assert(num_2 > 0); 
+				}
+
+				result = (int) pow( (double) num_1, (double) num_2); 
+				break; 
+		}
+
+		free_tree(current); 
+
+		return new_number(result); //Nothing else to simplify if we reduced current to a number
+	}
+
+	assert(current -> left != NULL && current -> right != NULL); //Must have non-null children for binary op
+
+	//**********************************Simplifications involving multiplication**************************************************
+	if (current -> nclass == MULT_OP && current -> symbol == MULT_CHAR) { 
+
+		if ( (current -> left -> nclass == NUMBER) && (current -> left -> number == 1) ) { //Multiply by 1
+			node_ptr new_root = clone_tree(current -> right);
+			free_tree(current); 
+			return new_root; 
+		}
+
+		if ( (current -> right -> nclass == NUMBER) && (current -> right -> number == 1) ) { //Multiply by 1
+			node_ptr new_root = clone_tree(current -> left); 
+			free_tree(current); 
+			return new_root; 
+		}
+
+		if ( (current -> left -> nclass == NUMBER && current -> left -> number == 0) 
+			|| (current -> right -> nclass == NUMBER && current -> right -> number == 0) ) { //Multiply by 0
+			free_tree(current); 
+			return new_number(0); //Multiply by 0 always results in zero
+		}
+	}
+
+	if (current -> nclass == PLUS_OP && current -> symbol == PLUS_CHAR) { //Simplifications involving +
+		if (current -> left -> nclass == NUMBER && current -> left -> number == 0) { // 0 + u(x) = u(x) for any function u
+			node_ptr new_root = clone_tree(current -> right); 
+			free_tree(current); 
+			return new_root; 
+		}
+
+		if (current -> right -> nclass == NUMBER && current -> right -> number == 0) { // u(x) + 0 = u(x) for any function u
+			node_ptr new_root = clone_tree(current -> left); 
+			free_tree(current); 
+			return new_root; 
+		}
+	}
+
+	if (current -> nclass == EXP_OP) { //Simplifications involving ^
+
+		if (current -> right -> nclass == NUMBER && current -> right -> number == 1) { // u(x)^1 = u(x)
+			node_ptr new_root = clone_tree(current -> left); 
+			free_tree(current); 
+			return new_root; 
+		}
+
+		if (current -> right -> nclass == NUMBER && current -> right -> number == 0) { // u(x)^0 = 1 provided u(x) != 0. Already checked that case.
+			free_tree(current); 
+			return new_number(1); 
+		}
+
+		if (current -> left -> nclass == NUMBER && current -> left -> number == 0) { // 0^u(x) = 0 provided u(x) > 0. Already checked that case.
+			free_tree(current); 
+			return new_number(0); 
+		}
+
+		if (current -> left -> nclass == NUMBER && current -> left -> number == 1) { //1^u(x) = 1 for any possible well-defined u(x)
+			free_tree(current); 
+			return new_number(1); 
+		}
+	}
+
+	return current; 
 
 }
 
