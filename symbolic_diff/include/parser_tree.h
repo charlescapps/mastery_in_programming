@@ -11,7 +11,6 @@
 const int MAX_SIZE; //Max length of input from user
 
 
-
 //*********************TYPEDEFS******************************************
 typedef enum {NUMBER, CONSTANT, VARIABLE, PLUS_OP, MULT_OP, EXP_OP, ZERO, ONE, UNDEFINED} node_class; 
 const char* node_class_strings[9];
@@ -28,7 +27,6 @@ typedef struct node_type {
 
 } node_struct; 
 
-
 //**********************INPUT / PRINT FUNCTIONS*****************************************
 
 bool read_expression(); //Read a line of input and store in variable for the module. true / false on success / failure
@@ -39,9 +37,14 @@ void print_node(node_ptr n);
 
 //***************************NODE / TREE FUNCTIONS************************************
 
-node_ptr new_node();
+node_ptr new_node(); //Allocate a new node with default values. node_class = UNDEFINED by default. 
+
+node_ptr clone_node(node_ptr); //Allocate a new node with the same values as the old node. left = right = NULL to avoid horrible errors. 
+
+node_ptr clone_tree(node_ptr); //Get a new tree with completely different memory space. Copy over structure and values from old tree. 
 
 void print_tree_parens();
+
 void print_tree_parens_helper(node_ptr);
 
 //*************************LL(1) PARSER FUNCTIONS**************************************
@@ -68,7 +71,13 @@ void must_be(char c);
 
 bool parse_succeeded();
 
-//************************CONVENIENCE / STRING FUNCTIONS**********************
+//************************DIFFERENTIATION FUNCTIONS***********************************
+
+void take_derivative(); 
+
+node_ptr derivative_helper(node_ptr input_root, node_ptr current); 
+
+//************************CONVENIENCE / STRING FUNCTIONS*****************************
 
 bool is_whitespace(char c);
 

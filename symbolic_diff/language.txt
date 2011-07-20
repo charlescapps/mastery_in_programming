@@ -7,3 +7,10 @@ primary --> ( expression ) | number | const | x
 
 need scan function that throws out whitespace and finds the next "enum", i.e. 
 	plus_op, x, number, const, open_paren, close_paren
+
+
+Right associativity:
+
+	Since we create nodes starting at the top of the stack, and glue them together as the stack unwinds, we get right associativity. 
+
+For now, continue. Don't see a problem with this :-)

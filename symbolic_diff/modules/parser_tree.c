@@ -15,7 +15,8 @@ static const char CLOSE_PAREN = ')';
 
 //***********************MODULE VARIABLES****************************************
 static node_ptr token = NULL; 
-static node_ptr parse_tree = NULL; 
+static node_ptr parse_tree = NULL;
+static node_ptr derivative = NULL;  
 static char* input = NULL;
 static char* current = NULL;
 static bool is_eof = false; 
@@ -137,6 +138,30 @@ node_ptr new_node() {
 
 }
 
+node_ptr clone_node(node_ptr old) {
+
+	node_ptr clone = new_node();
+	clone->nclass = old->nclass; 
+	clone->number = old->number;  
+	clone->symbol = old->symbol; 
+
+	return clone; 
+}
+
+node_ptr clone_tree(node_ptr old_root) {
+
+	if (old_root == NULL) {
+		return NULL; 
+	}
+
+	node_ptr new_root = clone_node(old_root); 
+
+	new_root -> left = clone_tree(old_root -> left); 
+	new_root -> right = clone_tree(old_root -> right); 
+
+	return new_root;
+}
+
 void print_node(node_ptr n) {
 
 	printf("Node class: %s\n", node_class_strings[n->nclass]); 
@@ -192,48 +217,47 @@ void parse() {
 node_ptr expression() {
 	if (parse_fail_early) return NULL; 
 
-	node_ptr plus_node = NULL, left_node = NULL, right_node = NULL; 
+	node_ptr plus_node = NULL, expr_root = NULL, right_node = NULL; 
 
-	left_node = term(); 
+	expr_root = term(); 
 	
-	if (token -> nclass == PLUS_OP) {
+	while (token -> nclass == PLUS_OP) {
 		plus_node = token; 
+
 		scan(); 
-		right_node = expression(); 
+
+		right_node = term(); 
+
+		plus_node -> left = expr_root; 
+		plus_node -> right = right_node; 
+		
+		expr_root = plus_node; 
+		
 	}
 
-	if (plus_node != NULL) {
-		plus_node -> left = left_node; 
-		plus_node -> right = right_node; 
-		return plus_node; 
-	}
-	else {
-		return left_node; 
-	}
+	return expr_root; 
 	
 } 
 
 node_ptr term() {
 	if (parse_fail_early) return NULL; 
 
-	node_ptr mult_node = NULL, left_node = NULL, right_node = NULL; 
+	node_ptr mult_node = NULL, term_root = NULL, right_node = NULL; 
 
-	left_node = factor(); 
+	term_root = factor(); 
 
-	if (token -> nclass == MULT_OP) {
+	while (token -> nclass == MULT_OP) {
 		mult_node = token; 
 		scan(); 
-		right_node = term(); 	
+		right_node = factor();
+
+		mult_node -> left = term_root; 
+		mult_node -> right = right_node; 
+
+		term_root = mult_node;  	
 	}
 
-	if (mult_node != NULL) {
-		mult_node -> left = left_node; 
-		mult_node -> right = right_node; 
-		return mult_node; 
-	}
-	else {
-		return left_node; 
-	}
+	return term_root; 
 
 }
 
@@ -309,6 +333,17 @@ void must_be(char c) {
 bool parse_succeeded() {
 	return parse_success; 
 }
+
+//**********************DIFFERENTIATION FUNCTIONS***************************
+
+void take_derivative() {
+	derivative = derivative_helper(parse_tree, derivative); 	
+}
+
+node_ptr derivative_helper(node_ptr input_root, node_ptr current) {
+
+	return NULL;	
+} 
 
 //*********************FUNCTIONS FOR CONVENIENCE*****************************
 
