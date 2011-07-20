@@ -10,7 +10,12 @@ int main() {
 	if (parse_succeeded()) {
 		printf("Parse succeeded!\n"); 
 		printf("Original f(x) = "); 
-		print_tree_parens(); //Print the expression with all parens indicating how we associated.
+		print_parse_tree(); //Print the expression with all parens indicating how we associated.
+
+		take_derivative(); 
+
+		printf("Derivative of f(x) = "); 
+		print_derivative(); 
 	}
 
 	return 0;

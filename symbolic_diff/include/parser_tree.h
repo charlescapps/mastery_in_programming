@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 //***********************CONSTANTS***************************************
 
@@ -12,8 +13,8 @@ const int MAX_SIZE; //Max length of input from user
 
 
 //*********************TYPEDEFS******************************************
-typedef enum {NUMBER, CONSTANT, VARIABLE, PLUS_OP, MULT_OP, EXP_OP, ZERO, ONE, UNDEFINED} node_class; 
-const char* node_class_strings[9];
+typedef enum {NUMBER, CONSTANT, VARIABLE, PLUS_OP, MULT_OP, EXP_OP, LOG_OP, UNDEFINED} node_class; 
+const char* node_class_strings[8];
 
 typedef struct node_type* node_ptr; 
 
@@ -39,13 +40,21 @@ void print_node(node_ptr n);
 
 node_ptr new_node(); //Allocate a new node with default values. node_class = UNDEFINED by default. 
 
+node_ptr new_node_v2(node_class nc, char sym); //Allocate a new node with given node class and symbol 
+
+node_ptr new_node_v3(node_class nc, char sym, node_ptr l, node_ptr r); //Allocate a new node with given node class and symbol 
+
 node_ptr clone_node(node_ptr); //Allocate a new node with the same values as the old node. left = right = NULL to avoid horrible errors. 
 
 node_ptr clone_tree(node_ptr); //Get a new tree with completely different memory space. Copy over structure and values from old tree. 
 
-void print_tree_parens();
+void print_parse_tree();
 
-void print_tree_parens_helper(node_ptr);
+void print_derivative(); 
+
+void print_tree_parens(node_ptr);
+
+node_ptr get_derivative_tree();
 
 //*************************LL(1) PARSER FUNCTIONS**************************************
 
@@ -75,7 +84,7 @@ bool parse_succeeded();
 
 void take_derivative(); 
 
-node_ptr derivative_helper(node_ptr input_root, node_ptr current); 
+node_ptr derivative_recurse(node_ptr root); 
 
 //************************CONVENIENCE / STRING FUNCTIONS*****************************
 
