@@ -16,6 +16,9 @@ int main() {
 
 		printf("Derivative of f(x) = "); 
 		print_derivative(); 
+
+		printf("Simplified f'(x) = "); 
+		print_simplified(); 
 	}
 
 	return 0;

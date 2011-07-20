@@ -38,7 +38,9 @@ void print_node(node_ptr n);
 
 //***************************NODE / TREE FUNCTIONS************************************
 
-node_ptr new_node(); //Allocate a new node with default values. node_class = UNDEFINED by default. 
+node_ptr new_node(void); //Allocate a new node with default values. node_class = UNDEFINED by default. 
+
+node_ptr new_number(int); 
 
 node_ptr new_node_v2(node_class nc, char sym); //Allocate a new node with given node class and symbol 
 
@@ -48,9 +50,13 @@ node_ptr clone_node(node_ptr); //Allocate a new node with the same values as the
 
 node_ptr clone_tree(node_ptr); //Get a new tree with completely different memory space. Copy over structure and values from old tree. 
 
+void free_tree(node_ptr); 
+
 void print_parse_tree();
 
 void print_derivative(); 
+
+void print_simplified(); 
 
 void print_tree_parens(node_ptr);
 
@@ -82,10 +88,13 @@ bool parse_succeeded();
 
 //************************DIFFERENTIATION FUNCTIONS***********************************
 
-void take_derivative(); 
+void take_derivative(void); 
 
-node_ptr derivative_recurse(node_ptr root); 
+node_ptr derivative_recurse(node_ptr); 
 
+void simplify_derivative(void); 
+
+void simplify_recurse(node_ptr); 
 //************************CONVENIENCE / STRING FUNCTIONS*****************************
 
 bool is_whitespace(char c);

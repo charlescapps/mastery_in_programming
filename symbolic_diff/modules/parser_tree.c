@@ -22,11 +22,13 @@ static const char LOG_CHAR = '&';
 static const char OPEN_PAREN = '('; 
 static const char CLOSE_PAREN = ')'; 
 
+static const char BIG_NUMBER = 'N'; 
 
 //***********************MODULE VARIABLES****************************************
 static node_ptr token = NULL; 
 static node_ptr parse_tree = NULL;
 static node_ptr derivative_tree = NULL;  
+static node_ptr simplified_deriv = NULL; 
 static char* input = NULL;
 static char* current = NULL;
 static bool is_eof = false; 
@@ -132,7 +134,7 @@ node_ptr get_derivative_tree() {
 	return derivative_tree; 
 }
 
-node_ptr new_node() {
+node_ptr new_node(void) {
 	
 	node_ptr np = (node_ptr) malloc(sizeof(node_struct)); 
 	np->nclass = UNDEFINED; 
@@ -155,6 +157,19 @@ node_ptr new_node_v3(node_class nc, char sym, node_ptr l, node_ptr r) { //Alloca
 	node_ptr new_guy = new_node_v2(nc, sym); 
 	new_guy -> left = l; 
 	new_guy -> right = r; 
+	return new_guy; 
+}
+
+node_ptr new_number(int n) {
+	node_ptr new_guy = new_node(); 
+	new_guy -> nclass = NUMBER; 
+	new_guy -> number = n; 
+	if (n < 0 || n > 9) {
+		new_guy -> symbol = BIG_NUMBER; 
+	}
+	else {
+		new_guy -> symbol = '0' + n; 
+	}
 	return new_guy; 
 }
 
@@ -181,6 +196,19 @@ node_ptr clone_tree(node_ptr old_root) {
 	return new_root;
 }
 
+void free_tree(node_ptr root) {
+
+	if (root == NULL) {
+		return; 
+	}
+
+	free_tree(root -> left); //POST-order traversal so that we don't reference anything after it has been freed
+
+	free_tree(root -> right); 
+
+	free(root); 
+} 
+
 void print_node(node_ptr n) {
 
 	printf("Node class: %s\n", node_class_strings[n->nclass]); 
@@ -195,6 +223,11 @@ void print_parse_tree() {
 
 void print_derivative() {
 	print_tree_parens(derivative_tree); 
+	printf("\n"); 
+}
+
+void print_simplified() {
+	print_tree_parens(simplified_deriv); 
 	printf("\n"); 
 }
 
@@ -381,6 +414,7 @@ node_ptr derivative_recurse(node_ptr current) {
 	}
 
 	if (current -> nclass == VARIABLE) { // d/dx(x) = 1
+		assert(current -> left == NULL && current -> right == NULL);  //variable has no children
 		current -> nclass = NUMBER; 
 		current -> number = 1; 
 		current -> symbol = '1'; 
@@ -388,6 +422,7 @@ node_ptr derivative_recurse(node_ptr current) {
 	}
 
 	if (current -> nclass == CONSTANT || current -> nclass == NUMBER) { //derivative of a constant is 0
+		assert(current -> left == NULL && current -> right == NULL);  //constant has no children
 		current -> nclass = NUMBER;
 		current -> number = 0; 
 		current -> symbol = '0';
@@ -403,21 +438,15 @@ node_ptr derivative_recurse(node_ptr current) {
 	if (current -> nclass == MULT_OP && current -> symbol == MULT_CHAR ) { // d/dx (u(x)*v(x)) = u'(x)*v(x) + u(x)*v'(x) 
 
 		//Root of new function is an addition
-		node_ptr new_root = new_node(); 
-		new_root -> nclass = PLUS_OP; 
-		new_root -> symbol = '+'; 
+		node_ptr new_root = new_node_v2(PLUS_OP, PLUS_CHAR); 
 		
 		//Build the left operand
-		node_ptr left_mult = new_node(); 
-		left_mult -> nclass = MULT_OP; 
-		left_mult -> symbol = '*'; 
+		node_ptr left_mult = new_node_v2(MULT_OP, MULT_CHAR); 
 		left_mult -> left = derivative_recurse(clone_tree(current->left)); 
 		left_mult -> right = clone_tree(current -> right); 
 
 		//Build the right operand
-		node_ptr right_mult = new_node(); 
-		right_mult -> nclass = MULT_OP; 
-		right_mult -> symbol = '*'; 
+		node_ptr right_mult = new_node_v2(MULT_OP, MULT_CHAR); 
 		right_mult -> left = current -> left; 
 		right_mult -> right = derivative_recurse(current->right); 
 
@@ -428,7 +457,7 @@ node_ptr derivative_recurse(node_ptr current) {
 		return new_root; 
 	}
 
-	if (current -> nclass == MULT_OP && current -> symbol == DIV_CHAR) { // d/dx ( u(x) / v(x) = (u'(x)*v(x) - u(x)*v'(x)) / [v(x)]^2
+	if ( (current -> nclass == MULT_OP) && (current -> symbol == DIV_CHAR) ) { // d/dx ( u(x) / v(x) = (u'(x)*v(x) - u(x)*v'(x)) / [v(x)]^2
 		//Root of new function is a division operation
 		node_ptr new_root = new_node(); 
 		new_root -> nclass = MULT_OP; 
@@ -480,10 +509,7 @@ node_ptr derivative_recurse(node_ptr current) {
 
 		assert(current -> right == NULL); //Log is a unary operator. 
 	
-		node_ptr new_root = new_node(); 
-		new_root -> nclass = MULT_OP;
-		new_root -> symbol = DIV_CHAR;  	
-		
+		node_ptr new_root = new_node_v2(MULT_OP, DIV_CHAR); 
 		new_root -> left = derivative_recurse(clone_tree(current -> left)); 
 		new_root -> right = current -> left; 
 		
@@ -491,6 +517,18 @@ node_ptr derivative_recurse(node_ptr current) {
 	}
 
 	if (current -> nclass == EXP_OP) { //d/dx (f^g)  = f^g * ( (f'/f) * g + log(f) * g' )     Just factored the f^g here to simplify expression
+
+		if (current -> right -> nclass == CONSTANT || current -> right -> nclass == NUMBER) {//Special case of power rule. f^c = (c*f^(c-1))*f'
+
+			node_ptr inner_mult = new_node_v3(MULT_OP, MULT_CHAR, clone_node(current -> right), NULL );
+			node_ptr inner_exp = new_node_v3(EXP_OP, EXP_CHAR, clone_tree(current->left), NULL );
+			node_ptr inner_minus = new_node_v3(PLUS_OP, MINUS_CHAR, clone_node(current->right), new_number(1)); 
+
+			inner_exp -> right = inner_minus; 
+			inner_mult -> right = inner_exp;   			
+
+			return new_node_v3(MULT_OP, MULT_CHAR, inner_mult, derivative_recurse(current->left)); 
+		}
 
 		//New root is a multiplication op
 		node_ptr new_root = new_node_v2(MULT_OP, MULT_CHAR); 
@@ -500,9 +538,9 @@ node_ptr derivative_recurse(node_ptr current) {
 		node_ptr right_mult = new_node_v2(PLUS_OP, PLUS_CHAR); 
 
 		//Build left of inner plus 
-		node_ptr left_plus = new_node(MULT_OP, MULT_CHAR); 
+		node_ptr left_plus = new_node_v2(MULT_OP, MULT_CHAR); 
 
-		node_ptr left_plus_left = new_node(MULT_OP, DIV_CHAR); 
+		node_ptr left_plus_left = new_node_v2(MULT_OP, DIV_CHAR); 
 		left_plus_left -> left = derivative_recurse(clone_tree(current -> left)); 
 		left_plus_left -> right = clone_tree(current->left); 
 
@@ -512,7 +550,7 @@ node_ptr derivative_recurse(node_ptr current) {
 		//Build right of inner plus
 		node_ptr right_plus = new_node_v2(MULT_OP, MULT_CHAR); 
 		right_plus -> left = new_node_v3(LOG_OP, LOG_CHAR, current-> left, NULL); //No need to clone current -> left the last time. Avoid memory leaks. 
-		right_plus -> right = derivative_recurse(current -> right); //Same with current -> right. May as well avoid memory leaks. 	
+		right_plus -> right = derivative_recurse(current -> right); //Same with current -> right. May as well re-attach this branch once.  	
 
 		//Glue together
 		right_mult -> left = left_plus; 
@@ -521,11 +559,47 @@ node_ptr derivative_recurse(node_ptr current) {
 		new_root -> right = right_mult; 
 	
 		return new_root; 	
-
 	}
 
 	return NULL;	
 } 
+
+void simplify_derivative(void) {
+	simplified_deriv = clone_tree(derivative_tree); 
+	simplify_recurse(simplified_deriv); 	
+}
+
+void simplify_recurse(node_ptr current) {
+
+	if (current == NULL) {
+		return; 
+	}
+
+	simplify_recurse(current -> left); //simplify left, right, then attempt to simplify current node. 
+	simplify_recurse(current -> right); 
+
+	if (current -> nclass == MULT_OP) {
+		if (current -> left -> nclass == NUMBER && current -> right -> nclass == NUMBER) { //Multiply two literal numbers. 
+			current -> nclass = NUMBER; 
+			current -> number = (current->left->number)*(current->right->number); 
+
+			if (current -> number < 0 || current -> number > 9) {
+				current -> symbol = BIG_NUMBER; //Indicates to the print_tree_parens function to print the whole number, not just the symbol
+			}
+			else {
+				current -> symbol = '0' + current -> number; 
+			}
+
+			free_tree(current -> left); //free old memory for children
+			free_tree(current -> right);
+
+			current -> left = current -> right = NULL;  
+		}
+
+		return; //Nothing else to do if we reduced it to a single number	
+	}	
+
+}
 
 //*********************FUNCTIONS FOR CONVENIENCE*****************************
 
