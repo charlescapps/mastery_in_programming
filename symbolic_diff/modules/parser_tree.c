@@ -133,10 +133,6 @@ void scan() { //get the next node from the input string
 
 //*******************NODE / TREE FUNCTIONS**********************************
 
-node_ptr get_derivative_tree() {
-	return derivative_tree; 
-}
-
 node_ptr new_node(void) {
 	
 	node_ptr np = (node_ptr) malloc(sizeof(node_struct)); 
