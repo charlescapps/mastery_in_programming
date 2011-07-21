@@ -117,9 +117,6 @@ void scan() { //get the next node from the input string
 	else if (c == OPEN_PAREN || c == CLOSE_PAREN) { //If we encounter a paren, node is UNDEFINED type with the character stored inside it. 
 		; 											//This node will never actually be added to the tree
 	}
-	else if (c == LOG_CHAR) {
-		token -> nclass = LOG_OP; 
-	}
 	else {
 		fprintf(stderr, "Parse error: Invalid character %c found.\n", c);
 		parse_fail_early = true; 
@@ -198,7 +195,6 @@ node_ptr clone_tree(node_ptr old_root) {
 
 	return new_root;
 }
-
 
 void free_tree(node_ptr root) {
 
@@ -404,13 +400,6 @@ node_ptr primary() {
 		primary_node = expression(); 
 		must_be(CLOSE_PAREN); 
 	}
-	else if (token -> nclass == LOG_OP) {
-		primary_node = clone_node(token); 
-		scan(); 
-		must_be(OPEN_PAREN); 
-		primary_node -> left = expression(); //Argument of log operation 
-		must_be(CLOSE_PAREN); 
-	} 
 	else {
 		primary_node = ident(); 
 	} 
@@ -723,15 +712,18 @@ node_ptr simplify_recurse(node_ptr current) {
 	//**********************************Simplifications involving multiplication**************************************************
 	if (current -> nclass == MULT_OP && current -> symbol == MULT_CHAR) { 
 
-		if ( (current -> left -> nclass == MULT_OP) && (current -> left -> symbol == DIV_CHAR) ) {  // (w(x)/v(x)) * u(x) = (w(x)*u(x)) / v(x)
-			
-			node_ptr new_root = clone_tree(current -> left); 			
-			node_ptr numerator = new_node_v3(MULT_OP, MULT_CHAR, current->left->left, current -> right); 
+		if ( (current -> left -> nclass == MULT_OP) && (current -> left -> symbol == DIV_CHAR)  // (1/v(x)) * u(x) = u(x) / v(x)
+			&& (current -> left -> left -> nclass == NUMBER) && (current -> left -> left -> number == 1) ) {
 
-			new_root -> left = numerator; 
-			free(current); //Free the original * operation
+			node_ptr new_root = clone_tree(current -> left); 			
+
+			free_tree(new_root -> left); //Free the number 1
 			
-			return simplify_recurse(new_root); //Process should terminate because we are reducing terms outside of div ops
+			new_root -> left = clone_tree(current -> right); //Set numerator to u(x)
+
+			free_tree(current); //Free up old tree
+
+			current =  new_root; //Don't return yet for the possibility we now have u(x) / u(x)
 		}
 
 		if ( (current -> left -> nclass == NUMBER) && (current -> left -> number == 1) ) { //Multiply by 1 on the left
@@ -766,22 +758,9 @@ node_ptr simplify_recurse(node_ptr current) {
 			free_tree(current); 
 			return new_number(1); 
 		}
-
-		if (current -> right -> nclass == NUMBER && current -> right -> number == 1) { // u(x) / 1 = u(x)
-			node_ptr numerator = current -> left; 
-			free(current -> right); //Free the number 1
-			free(current); 
-			return numerator; 
-		}
-
-		if (current -> left -> nclass == MULT_OP && current -> left -> symbol == MULT_CHAR) { // (u(x)*v(x)*...) / u(x) = v(x)*...
-			node_ptr factor = current -> left; 
-			simplify_division(current, factor); 
-			return simplify_recurse(current); 
-		}
 	}
 
-	//***************************************Simplifications involving (+) *************************************************
+
 	if (current -> nclass == PLUS_OP && current -> symbol == PLUS_CHAR) { //Simplifications involving +
 		if (current -> left -> nclass == NUMBER && current -> left -> number == 0) { // 0 + u(x) = u(x) for any function u
 			node_ptr new_root = clone_tree(current -> right); 
@@ -826,39 +805,13 @@ node_ptr simplify_recurse(node_ptr current) {
 			current-> left = new_base; 
 			current -> right = new_pow; 
 
-			return simplify_recurse(current); //Attempt to simplify again. Process must terminate since each step removes a '^' symbol 
+			return simplify_recurse(current); //Attempt to simplify again. 
 
 		}
 	}
 
 	return current; //If no simplifications are possible, just return
 
-}
-
-void simplify_division(node_ptr root_division, node_ptr factor) {//helper to simplify u(x)*v(x)*...*w(x) / u(x) = v(x)*...*w(x)
-
-	if (factor -> nclass != MULT_OP || factor -> symbol != MULT_CHAR) {
-		return; 
-	}
-
-	if (are_trees_equal(factor->left, root_division -> right)) {
-		free_tree(root_division -> right);
-		root_division->right = new_number(1); 
-		free_tree(factor->left); 
-		factor -> left = new_number(1); 
-		return;  
-	}	
-	if (are_trees_equal(factor->right, root_division -> right)) {
-		free_tree(root_division -> right); 
-		root_division -> right = new_number(1); 
-		free_tree(factor->right); 
-		factor -> right = new_number(1); 
-		return;  
-	}	
-
-	simplify_division(root_division, factor->left); //Recursively check factors of division for things equal to the denominator
-	simplify_division(root_division, factor->right);   	
-	
 }
 
 //*********************FUNCTIONS FOR CONVENIENCE*****************************

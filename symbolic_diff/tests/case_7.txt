@@ -1,0 +1,6 @@
+Enter f(x), ended with $: 2^5*x $
+Parse succeeded!
+original f(x) = ((2 ^ 5) * x)
+derived f'(x) = ((((5 * (2 ^ (5 - 1))) * 0) * x) + ((2 ^ 5) * 1))
+reduced f'(x) = 32
+

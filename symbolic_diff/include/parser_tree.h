@@ -100,6 +100,8 @@ node_ptr derivative_recurse(node_ptr);
 void simplify_derivative(void); 
 
 node_ptr simplify_recurse(node_ptr); 
+
+void simplify_division(node_ptr root_division, node_ptr factor); //helper to simplify u(x)*v(x)*...*w(x) / u(x) = v(x)*...*w(x)
 //************************CONVENIENCE / STRING FUNCTIONS*****************************
 
 bool is_whitespace(char c);

@@ -3,7 +3,7 @@ Language for symbolic differentiation homework:
 expression --> term | term plus_op expression
 term --> factor | factor mult_op term
 factor --> primary | primary^factor
-primary --> ( expression ) | number | const | x
+primary --> ( expression ) | number | const | x | log( expression )
 
 need scan function that throws out whitespace and finds the next "enum", i.e. 
 	plus_op, x, number, const, open_paren, close_paren
