@@ -41,7 +41,7 @@ bool read_expression() { //Read a line of input and store in variable for the mo
 	bool success;
 	input = (char*) malloc(sizeof(char)*(MAX_SIZE + 1)); 
 
-	printf("Enter f(x), terminating with '$': "); 
+	printf("Enter f(x), ended with $: "); 
 
 	if (!(success = fgets(input, MAX_SIZE, stdin)) ) {
 		printf("Failure getting input.\n"); 
@@ -54,7 +54,7 @@ bool read_expression() { //Read a line of input and store in variable for the mo
 		input[len - 1] = '\0'; 
 	}
 
-	printf("Expression: %s\n", input);  
+	//printf("Expression: %s\n", input);  
 
 	return success;
 }
@@ -209,6 +209,43 @@ void free_tree(node_ptr root) {
 	free(root); 
 } 
 
+bool are_trees_equal(node_ptr t1, node_ptr t2) { //Recursively checks if trees are equal. 
+
+	if (t1 == NULL && t2 == NULL) {
+		return true; 
+	}
+
+	if (!are_nodes_equal(t1, t2) ) { //Covers case where one is NULL and the other isn't
+		return false; 
+	}
+
+	//Now we know both children are not NULL, so we can recurse
+	return (are_trees_equal(t1 -> left, t2 -> left) && are_trees_equal(t1 -> right, t2 -> right)); 
+}
+
+bool are_nodes_equal(node_ptr n1, node_ptr n2) { //Checks if 2 nodes are equal, ignoring its children
+
+	if (n1 == NULL && n2 == NULL) {
+		return true; 
+	}
+
+	if (n1 == NULL || n2 == NULL) {
+		return false; 
+	}
+
+	if ( (n1-> nclass != n2 -> nclass) || (n1 -> symbol != n2 -> symbol) ) {
+		return false; 
+	} 
+
+	if (n1 -> nclass == NUMBER && n2 -> nclass == NUMBER) { //Only check the numeric value if they are of class NUMBER
+		if (n1 -> number != n2 -> number) {					//The residual number value doesn't matter if the node is an operator
+			return false; 
+		}
+	}
+
+	return true; 
+}
+
 void print_node(node_ptr n) {
 
 	printf("Node class: %s\n", node_class_strings[n->nclass]); 
@@ -253,7 +290,13 @@ void print_tree_parens(node_ptr np) {
 		return; 
 	}
 
-	//Else we must have enountered a variable, constant, or number. So just print the char.
+	//Now allowing for numbers < 0 or > 9 after simplification. So print the number instead of just the symbol
+	if (np -> nclass == NUMBER) {
+		printf("%d", np->number); 
+		return; 
+	}
+
+	//Else we must have enountered a variable or constant. So just print the char.
 	printf("%c", np->symbol); 
 
 }
@@ -630,16 +673,57 @@ node_ptr simplify_recurse(node_ptr current) {
 
 	assert(current -> left != NULL && current -> right != NULL); //Must have non-null children for binary op
 
+	//***************************SIMPLIFY expressions like 5*(5*/(u(x))) = 25*/u(x) and 5+(5+-(u(x)))= (10 +- u(x))*****************************************
+	if (current -> nclass == PLUS_OP && current -> symbol == PLUS_CHAR && current -> left -> nclass == NUMBER
+			&& current -> right -> nclass == PLUS_OP && current -> right -> left -> nclass == NUMBER) {
+
+		node_ptr new_root = clone_tree(current->right); 
+		node_ptr tmp = new_root -> left; //Store to delete, will be replaced 
+		new_root -> left = new_number( (new_root -> left -> number) + (current -> left -> number) ); 
+
+		free_tree(tmp); 
+		free_tree(current); 
+
+		current = new_root; //Don't return yet, further simplifications could be possible
+	}
+
+	if (current -> nclass == MULT_OP && current -> symbol == MULT_CHAR && current -> left -> nclass == NUMBER
+			&& current -> right -> nclass == MULT_OP && current -> right -> left -> nclass == NUMBER) {
+
+		node_ptr new_root = clone_tree(current->right); 
+		node_ptr tmp = new_root -> left; //Store to delete, will be replaced 
+		new_root -> left = new_number( (new_root -> left -> number) * (current -> left -> number) ); 
+
+		free_tree(tmp); 
+		free_tree(current); 
+
+		current = new_root; //Don't return yet, further simplifications could be possible
+	}
+
 	//**********************************Simplifications involving multiplication**************************************************
 	if (current -> nclass == MULT_OP && current -> symbol == MULT_CHAR) { 
 
-		if ( (current -> left -> nclass == NUMBER) && (current -> left -> number == 1) ) { //Multiply by 1
+		if ( (current -> left -> nclass == MULT_OP) && (current -> left -> symbol == DIV_CHAR)  // (1/v(x)) * u(x) = u(x) / v(x)
+			&& (current -> left -> left -> nclass == NUMBER) && (current -> left -> left -> number == 1) ) {
+
+			node_ptr new_root = clone_tree(current -> left); 			
+
+			free_tree(new_root -> left); //Free the number 1
+			
+			new_root -> left = clone_tree(current -> right); //Set numerator to u(x)
+
+			free_tree(current); //Free up old tree
+
+			current =  new_root; //Don't return yet for the possibility we now have u(x) / u(x)
+		}
+
+		if ( (current -> left -> nclass == NUMBER) && (current -> left -> number == 1) ) { //Multiply by 1 on the left
 			node_ptr new_root = clone_tree(current -> right);
 			free_tree(current); 
 			return new_root; 
 		}
 
-		if ( (current -> right -> nclass == NUMBER) && (current -> right -> number == 1) ) { //Multiply by 1
+		if ( (current -> right -> nclass == NUMBER) && (current -> right -> number == 1) ) { //Multiply by 1 on the right
 			node_ptr new_root = clone_tree(current -> left); 
 			free_tree(current); 
 			return new_root; 
@@ -650,7 +734,23 @@ node_ptr simplify_recurse(node_ptr current) {
 			free_tree(current); 
 			return new_number(0); //Multiply by 0 always results in zero
 		}
+
 	}
+
+	//**********************************Simplifications involving division**************************************************
+	if (current -> nclass == MULT_OP && current -> symbol == DIV_CHAR) {
+		
+		if (current -> left -> nclass == NUMBER && current -> left -> number == 0) { // 0/u(x) = 0 provided u(x) != 0
+			free_tree(current); 
+			return new_number(0); 
+		}
+
+		if (are_trees_equal(current->left, current->right) ) { //u(x) / u(x) = 1 wherever u(x) != 0. 
+			free_tree(current); 
+			return new_number(1); 
+		}
+	}
+
 
 	if (current -> nclass == PLUS_OP && current -> symbol == PLUS_CHAR) { //Simplifications involving +
 		if (current -> left -> nclass == NUMBER && current -> left -> number == 0) { // 0 + u(x) = u(x) for any function u
@@ -690,7 +790,7 @@ node_ptr simplify_recurse(node_ptr current) {
 		}
 	}
 
-	return current; 
+	return current; //If no simplifications are possible, just return
 
 }
 

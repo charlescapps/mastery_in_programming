@@ -9,15 +9,15 @@ int main() {
 
 	if (parse_succeeded()) {
 		printf("Parse succeeded!\n"); 
-		printf("Original f(x) = "); 
+		printf("original f(x) = "); 
 		print_parse_tree(); //Print the expression with all parens indicating how we associated.
 
 		take_derivative(); 
-		printf("Derivative of f(x) = "); 
+		printf("derived f'(x) = "); 
 		print_derivative(); 
 
 		simplify_derivative(); 
-		printf("Simplified f'(x) = "); 
+		printf("reduced f'(x) = "); 
 		print_simplified(); 
 	}
 

@@ -1,0 +1,7 @@
+Enter f(x), ended with $: x*(2*x+5*b) - 4*x $       
+Expression: x*(2*x+5*b) - 4*x $
+Parse succeeded!
+original f(x) = ((x * ((2 * x) + (5 * b))) - (4 * x))
+derived f'(x) = (((1 * ((2 * x) + (5 * b))) + (x * (((0 * x) + (2 * 1)) + ((0 * b) + (5 * 0))))) - ((0 * x) + (4 * 1)))
+reduced f'(x) = ((((2 * x) + (5 * b)) + (x * 2)) - 4)
+

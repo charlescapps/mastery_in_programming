@@ -1,0 +1,6 @@
+Enter f(x), ended with $: x^x $
+Parse succeeded!
+original f(x) = (x ^ x)
+derived f'(x) = ((x ^ x) * (((1 / x) * x) + (&(x) * 1)))
+reduced f'(x) = ((x ^ x) * (1 + &(x)))
+

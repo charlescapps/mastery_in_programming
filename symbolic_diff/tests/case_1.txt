@@ -1,0 +1,6 @@
+Enter f(x), ended with $: x $
+Parse succeeded!
+original f(x) = x
+derived f'(x) = 1
+reduced f'(x) = 1
+

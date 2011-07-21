@@ -53,6 +53,10 @@ node_ptr clone_tree(node_ptr); //Get a new tree with completely different memory
 
 void free_tree(node_ptr); 
 
+bool are_trees_equal(node_ptr tree_1, node_ptr tree_2); //Recursively checks if trees are equal. 
+
+bool are_nodes_equal(node_ptr node_1, node_ptr node_2); //Checks if 2 nodes are equal, ignoring its children
+
 void print_parse_tree();
 
 void print_derivative(); 
