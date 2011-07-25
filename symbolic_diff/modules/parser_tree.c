@@ -2,6 +2,7 @@
 
 //*************************GLOBAL CONSTANTS DEFINED*****************************
 const int MAX_SIZE = 1024; 
+const int MAX_INT_LENGTH = 11; //Max length that can be stored in a 32-bit integer variable (can have -2^31 ~ -8000000000) 
 const char* node_class_strings[8] = {"NUMBER", "CONSTANT", "VARIABLE", "PLUS_OP", "MULT_OP", "EXP_OP", "LOG_OP", "UNDEFINED"};
 //***********************MODULE CONSTANTS****************************************
 static const char VARIABLE_CHAR = 'x'; 
@@ -95,9 +96,32 @@ void scan() { //get the next node from the input string
 
 	token -> symbol = c; 
 
-	if (is_number(c)) {
+	if (is_number(c)) { //Scan until we stop finding decimal digits, supports any length of number
+		char buffer[MAX_INT_LENGTH + 1]; 
+		int i = 0; 
+
+		while (is_number(current[i]) && i < MAX_SIZE) {
+			buffer[i] = current[i]; 
+			i++; 
+		}
+		buffer[i] = '\0'; 
+
+		int num = atoi(buffer); 
+		//printf("Num found: %d\n", num);
+ 
 		token -> nclass = NUMBER;
-		token->number = c - '0'; 
+		token -> number = num; 
+
+		if (num < 0 || num > 9) {
+			token -> symbol = BIG_NUMBER;
+		} 
+		else {
+			token -> symbol = '0' + num; 
+		}
+
+		current = current + i - 1; //Move current pointer to last char in number, so 
+								//next time it's incremented we scan to the next symbol
+
 	}
 	else if (is_plus_op(c)) { 
 		token -> nclass = PLUS_OP; 
@@ -792,6 +816,21 @@ node_ptr simplify_recurse(node_ptr current) {
 		}
 	}
 
+	if (current -> nclass == PLUS_OP && current -> symbol == MINUS_CHAR) { //Simplifications involving +
+		if (current -> right -> nclass == NUMBER && current -> right -> number == 0) { // u(x) - 0 = u(x) for any function u
+			node_ptr new_root = current->left;  
+			free(current); //Free the (-) operation
+			free(current -> right);  //Free the zero
+			return simplify_recurse(new_root); 
+		}
+
+		if (current -> left -> nclass == NUMBER && current -> left -> number == 0) { // 0 - u(x) =(-1)*u(x) for any function u
+			node_ptr new_root = new_node_v3(MULT_OP, MULT_CHAR, new_number(-1), current->right); 
+			free(current); 
+			free(current -> left); 
+			return simplify_recurse(new_root); 
+		}
+	}
 	//***************************************Simplifications involving exponentiation**********************************
 	if (current -> nclass == EXP_OP) { 
 

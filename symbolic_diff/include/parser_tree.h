@@ -32,6 +32,7 @@ Since it uses standard in, you can pipe the input expression into the program fr
 //***********************CONSTANTS***************************************
 
 const int MAX_SIZE; //Max length of input from user
+const int MAX_INT_LENGTH; 
 
 //*********************TYPEDEFS******************************************
 typedef enum {NUMBER, CONSTANT, VARIABLE, PLUS_OP, MULT_OP, EXP_OP, LOG_OP, UNDEFINED} node_class; //Types of nodes. Undefined is default. 

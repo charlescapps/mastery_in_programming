@@ -115,7 +115,7 @@ Using a single call to \verb=malloc= is a fairly common technique to improve per
 The technique taught at Lawrence University uses a slightly different approach, but is essentially the same. A struct is used for the 2d array. Two calls to \verb=malloc= are made -- one to allocate the row pointers, and one to allocate all the data in a single call. It still avoids calling \verb=malloc= for each row, and the data is still contiguous in memory. However, the row pointers will likely be stored in a different place on the heap than the data.   
 
 \section{Results}
-
+\subsection{Data from unix time command} 
 Following is a graph of the `real time' (total time) measured by the unix \verb=time= command (see Figure ~\ref{fig:real_time} ). As mentioned above, each datapoint represents 100 runs of the game of life; each run is 1024 evolutions starting from the input given in the appendix. 
 
 A few things are interesting to note. Each version of the code improves performance, except for version 4 with level 0 optimisation. With level 5 optimisation, there is a very slight improvement. From this graph one could infer that the strategy of allocating all the rows of a board contiguosly in memory doesn't significantly improve performance, if at all (the error bars of the version 4 datapoint overlap with the error bars of the version 3 datapoint with level 5 optimisation). 
@@ -138,6 +138,7 @@ The last data from the \verb=time= command is given in Figure ~\ref{fig:user_tim
 One can argue that the level 5 optimisation probably makes an improvement similar to what version 4 of the code accomplishes. Therefore, the difference between version 4 and version 5 with O5 optimisation is small. With level 0 optimisation a significant improvement occurs between version 3 and version 4. In fact, the improvement is greater than the improvement between version 2 and version 3!  
 
 Therefore, the system time (or context switching) must account for the lack of improvement seen in the `real time' data. Since we are really interested in the time it takes to run the user code, it appears the version 4 code improvement is useful after all. Again, the experiment could be repeated with more runs or a larger amount of work per run so that the effect of context switching and system code is less important. 
+
 \begin{figure}[H]  
 \centering
 \caption{System time, as measured by the unix `time' utility.}
@@ -152,7 +153,8 @@ Therefore, the system time (or context switching) must account for the lack of i
 \label{fig:user_time}
 \end{figure}
 
-\section{Example output and code} 
+\subsection{Profiling Results}
+
 
 \section{Conclusion}
 
