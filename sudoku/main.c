@@ -25,12 +25,18 @@ int main(int argc, char** args) {
 
 	sudoku s = sudoku_from_file(input_file); 
 
+	printf("Input sudoku:\n"); 
 	print_sudoku(s); 
 
 	int empty_cnt = num_empty(s); 
 	printf("Total # of fields: %d\n", SIZE*SIZE); 
 	printf("Fields filled: %d\n", SIZE*SIZE - empty_cnt); 
 	printf("Fields empty: %d\n", empty_cnt); 
+
+	sudoku soln = get_lvl0_soln(s); 
+
+	printf("\nLevel 0 Solution:\n"); 
+	print_sudoku(soln); 
 
 	return 0; 
 }

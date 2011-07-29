@@ -1,12 +1,125 @@
 #include "../include/sudoku.h"
 
-const int SIZE = 9; 
 const char* NUMBERS = "123456789"; 
 const char EMPTY = '-'; 
+const char ONE = '1'; 
 
 static const int BUFFER_SIZE = 128; 
 static const char* TOP = "  0 1 2  3 4 5  6 7 8   \n";
 static const char* MID = "+------+------+------+  \n";
+
+sudoku get_lvl0_soln(sudoku s) {
+	sudoku soln = clone_sudoku(s);
+	possible p = new_possible(); 
+	bool entry_changed = false; 
+	bool changed = false; 
+
+	int i, j; 
+
+	do {
+		changed = false; 
+
+		for (i = 0; i < SIZE; i++) {
+			for (j = 0; j < SIZE; j++) {
+				entry_changed = set_possible(p[i][j], soln, i, j);
+				changed = changed || entry_changed;  	
+
+				if (entry_changed) { //If the set of possible values changed, there's a chance there's a unique possible entry
+					soln[i][j] = get_entry(p[i][j]); 
+				}				
+			}
+		}
+
+	} while (changed && (num_empty(soln) > 0)); //While a change has been made and there are empty slots in the solution
+
+	return soln;  
+} 
+
+bool set_possible(bool* array, sudoku s, int row, int col) {//Returns true if a change was made, false otherwise
+	bool changed = false; 
+
+	if (s[row][col] != EMPTY) { //If it's already filled with a number, do nothing
+		return changed; 
+	}
+
+	int i, j; 
+	char ch; 
+	//Check current row
+	for (j = 0; j < SIZE; j++) {
+		ch = s[row][j]; 
+		if (ch != EMPTY) {
+			changed = array[ch - ONE] || changed; 
+			array[ch - ONE] = false; //Number not possible if found on same row
+		}
+	}	
+
+	//Check current col
+	for (i = 0; i < SIZE; i++) {
+		ch = s[i][col]; 
+		if (ch != EMPTY) {
+			changed = array[ch - ONE] || changed; 
+			array[ch - ONE] = false; //"" if on same col
+		}
+	}
+
+	//Check current quadrant
+	int quad_row = (row / 3)*3; 
+	int quad_col = (col / 3)*3; 	
+
+	for (i = quad_row; i < quad_row + 3; i++) {
+		for (j = quad_col; j < quad_col + 3; j++) {
+			ch = s[i][j]; 
+			if (ch != EMPTY) {
+				changed = array[ch - ONE] || changed; 
+				array[ch - ONE] = false; 
+			}
+		}
+	}
+
+	return changed; 
+}
+
+char get_entry(bool* array) { //Returns a char in '1', ..., '9' if there is one possibility. Otherwise, returns '-', the EMPTY char
+
+	char entry = '-'; 
+
+	int i; 
+	for (i = 0; i < SIZE; i++) {//Find first true value
+		if (array[i] == true) {
+			entry = ONE + i;
+			i++;  
+			break; 
+		}
+	}		
+
+	for (; i < SIZE; i++) { //If there's another true value after the first one, just return '-'
+		if (array[i] == true) {
+			entry = '-'; 
+			break; 
+		}
+	}
+
+	return entry; 
+}
+
+possible new_possible() { //New possible with entries set to true, since by default a value is possible until proven otherwise
+
+	possible p = (possible)malloc(sizeof(bool**)*SIZE); //9 pointers to rows
+
+	int i, j, k; 
+	for (i = 0; i < SIZE; i++) {
+		p[i] = (bool**)malloc(sizeof(bool*)*SIZE); //9 arrays of bools for each entry
+		for (j = 0; j < SIZE; j++) {
+			p[i][j] = malloc(sizeof(bool)*SIZE); //9 bools in each array
+			for (k = 0; k < SIZE; k++) {
+				p[i][j][k] = true; 
+			} 
+		}
+	}
+
+	return p; 
+
+}
 
 sudoku new_sudoku() {
 	sudoku s = (sudoku)malloc(sizeof(char*)*SIZE); //Allocate row pointers 
@@ -20,6 +133,19 @@ sudoku new_sudoku() {
 
 	return s; 
 }
+
+sudoku clone_sudoku(sudoku s) {
+	sudoku clone = new_sudoku(); 
+
+	int i, j; 
+	for (i = 0; i < SIZE; i++) {
+		for (j = 0; j < SIZE; j++) {
+			clone[i][j] = s[i][j]; 
+		}
+	}
+
+	return clone; 
+} 
 
 void print_sudoku(sudoku s) {
 
