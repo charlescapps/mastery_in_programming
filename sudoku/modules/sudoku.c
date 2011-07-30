@@ -35,6 +35,123 @@ sudoku get_lvl0_soln(sudoku s) {
 	return soln;  
 } 
 
+sudoku get_lvl0_soln_v2(sudoku s, possible p) { //Gets the lvl0 solution and modifies the given possible object with the possible ways to place numbers
+
+	sudoku soln = clone_sudoku(s);
+	bool entry_changed = false; 
+	bool changed = false; 
+
+	int i, j; 
+
+	do {
+		changed = false; 
+
+		for (i = 0; i < SIZE; i++) {
+			for (j = 0; j < SIZE; j++) {
+				entry_changed = set_possible(p[i][j], soln, i, j);
+				changed = changed || entry_changed;  	
+
+				if (entry_changed) { //If the set of possible values changed, there's a chance there's a unique possible entry
+					soln[i][j] = get_entry(p[i][j]); 
+				}				
+			}
+		}
+
+	} while (changed); //While a change has been made and there are empty slots in the solution
+
+	return soln;  
+}
+
+list* get_all_solns(sudoku s) {
+
+	list* solns = new_list(&free_sudoku); //Create a new list that knows how to free its nodes. 
+
+	possible p = new_possible(); 
+
+	all_solns_helper(s, p, solns); 
+
+	return solns; 
+
+} 
+
+void all_solns_helper(sudoku s, possible p, list* solns) {
+
+	if (solns->head != NULL) { //For now, just return if we found any solution 
+		return; 
+	}
+
+	sudoku closure = get_lvl0_soln_v2(s, p); //Get closure under lvl0 strategy to reduce search space
+
+	if (is_impossible(p, closure)) { //If it's impossible, we made an invalid placement. 
+		free_sudoku(closure); 
+		return; 
+	}	
+
+	if (num_empty(closure) <= 0) { //If it's not impossible and the closure has no empty squares, we found a soln
+		add_to_list(solns, closure); 
+		return; 
+	}
+
+	int i, j, k; 
+	possible p_clone; 
+
+	for (i = 0; i < SIZE; i++) {
+		for (j = 0; j < SIZE; j++) {
+			if (closure[i][j] != EMPTY) {
+				continue; 
+			}
+			for (k = 0; k < SIZE; k++) {
+				if (!(p[i][j][k])) { //Skip blatantly invalid placements, with 2 numbers in same row, col, or quadrant
+					continue; 
+				}
+				closure[i][j] = ONE + k; //Place (k+1) on board at pos (i,j) 
+				p_clone = clone_possible(p); 
+				all_solns_helper(closure, p_clone, solns); //Recursive call after attempting to place
+				closure[i][j] = EMPTY; 
+				free_possible(p_clone); 
+			}
+		}
+	}
+
+	free_sudoku(closure); //We searched all possible placements starting with sudoku s, so free the lvl0 closure
+}
+
+bool is_impossible(possible p, sudoku s) {
+	bool any_true = false; 
+	int i, j, k; 
+
+	for (i = 0; i < SIZE; i++) {
+		for (j = 0; j < SIZE; j++) {
+			if (s[i][j] != EMPTY) {
+				continue; 
+			}
+			any_true = false; 
+			for (k = 0; k < SIZE; k++) { //Check if any numbers can be places in square (i,j)
+				any_true = any_true || p[i][j][k]; 
+			}	
+			if (!any_true) { //If nothing can be placed in this square, the sudoku board is impossible to solve
+				return true; 
+			}
+		}
+	}	
+	return false; 
+} 
+
+void set_all_possible(sudoku s, possible p) {
+
+	int i, j, k; 
+
+	for (i = 0; i < SIZE; i++) {
+		for (j = 0; j < SIZE; j++) {
+			memset(p[i][j], true, sizeof(bool)*SIZE); //Default is true
+			for (k = 0; k < SIZE; k++) {
+				set_possible(p[i][j], s, i, j); //Set false entries based on this board
+			} 
+		}
+	}
+
+}
+
 bool set_possible(bool* array, sudoku s, int row, int col) {//Returns true if a change was made, false otherwise
 	bool changed = false; 
 
@@ -118,7 +235,47 @@ possible new_possible() { //New possible with entries set to true, since by defa
 	}
 
 	return p; 
+}
 
+bool are_sudokus_equal(sudoku s1, sudoku s2) {
+	int i, j; 
+
+	for (i = 0; i < SIZE; i++) {
+		for (j = 0; j < SIZE; j++) {
+			if (s1[i][j] != s2[i][j]) {
+				return false; 
+			}
+		}
+	}
+	return true; 
+
+}
+
+possible clone_possible(possible p) {
+	possible clone = new_possible(); 
+
+	int i, j, k ;
+	for (i = 0; i < SIZE; i++) {
+		for (j = 0; j < SIZE; j++) {
+			for (k = 0; k < SIZE; k++) {
+				clone[i][j][k] = p[i][j][k]; 
+			}
+		}
+	}
+
+	return clone; 
+
+}
+
+void free_possible(possible p) {
+
+	int i, j; 
+	for (i = 0; i < SIZE; i++) {
+		for (j = 0; j < SIZE; j++) {
+			free(p[i][j]);
+		}
+		free(p[i]); 
+	}
 }
 
 sudoku new_sudoku() {
@@ -147,6 +304,14 @@ sudoku clone_sudoku(sudoku s) {
 	return clone; 
 } 
 
+void free_sudoku(void* obj) { //Function to free a sudoku object. Argument is void* to be compatible with my generic linked-list module 
+	sudoku s = (sudoku)obj; 
+	int i; 
+	for (i = 0; i < SIZE; i++) {
+		free(s[i]); 
+	}
+}
+
 void print_sudoku(sudoku s) {
 
 	printf("%s", TOP);
@@ -162,6 +327,19 @@ void print_sudoku(sudoku s) {
 	}
 	 
 	printf("%s", MID); //Print bottom 
+}
+
+void print_soln_list(list* solns) { //Must be passed a list containing sudoku objects. Will print them all 
+
+	node* tmp = solns->head; 
+	int i = 0; 
+
+	while (tmp != NULL) {
+		printf("Soln # %d:\n", ++i); 
+		print_sudoku((sudoku)(tmp->data)); 	
+		tmp = tmp->next; 
+	}
+
 }
 
 sudoku sudoku_from_file(FILE* infile) {

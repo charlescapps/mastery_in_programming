@@ -1,0 +1,8 @@
+Believe algorithm is correct
+	However, stack quickly overflowed. 
+	How to fix this problem? 
+	-Avoid cloning possible's. 
+		*Make function to set possible matrix for a given sudoku
+	-Make sudoku's take up less space?
+		
+	-Somehow avoid cloning boards?  

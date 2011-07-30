@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "include/sudoku.h"
+#include "include/list.h"
 
 const char* USAGE = "solve_sudoku <input_file> [--help | -?]\n"; 
 
@@ -37,6 +38,10 @@ int main(int argc, char** args) {
 
 	printf("\nLevel 0 Solution:\n"); 
 	print_sudoku(soln); 
+
+	printf("\nAll solutions:\n"); 
+	list* solns = get_all_solns(s); 
+	print_soln_list(solns); 	
 
 	return 0; 
 }
