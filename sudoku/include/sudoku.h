@@ -36,7 +36,13 @@ sudoku sudoku_from_file(FILE*); //get an initial configuration for game of life 
 
 void print_sudoku(sudoku); 
 
+void print_sudoku_stats(sudoku); 
+
+void print_possible(possible, sudoku); //Print which placements have been eliminated
+
 void print_soln_list(list*); //Must be passed a list containing sudoku objects. Will print them all 
+
+void print_soln_list_stats(list*); //Must be passed a list containing sudoku objects. Will print them all 
 
 int num_empty(sudoku); 
 

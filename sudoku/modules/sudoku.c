@@ -75,12 +75,15 @@ list* get_all_solns(sudoku s) {
 } 
 
 void all_solns_helper(sudoku s, possible p, list* solns) {
+	//print_sudoku(s); //Debugging purposes
 
 	if (solns->head != NULL) { //For now, just return if we found any solution 
 		return; 
 	}
 
 	sudoku closure = get_lvl0_soln_v2(s, p); //Get closure under lvl0 strategy to reduce search space
+
+	//print_possible(p, closure); 
 
 	if (is_impossible(p, closure)) { //If it's impossible, we made an invalid placement. 
 		free_sudoku(closure); 
@@ -93,24 +96,35 @@ void all_solns_helper(sudoku s, possible p, list* solns) {
 	}
 
 	int i, j, k; 
+	int min_empty_i = -1, min_empty_j = -1; 
 	possible p_clone; 
 
+	//Find the first i,j that is empty
 	for (i = 0; i < SIZE; i++) {
+		if (min_empty_i >= 0 && min_empty_j >=0) {
+			break; 
+		}
 		for (j = 0; j < SIZE; j++) {
 			if (closure[i][j] != EMPTY) {
 				continue; 
 			}
-			for (k = 0; k < SIZE; k++) {
-				if (!(p[i][j][k])) { //Skip blatantly invalid placements, with 2 numbers in same row, col, or quadrant
-					continue; 
-				}
-				closure[i][j] = ONE + k; //Place (k+1) on board at pos (i,j) 
-				p_clone = clone_possible(p); 
-				all_solns_helper(closure, p_clone, solns); //Recursive call after attempting to place
-				closure[i][j] = EMPTY; 
-				free_possible(p_clone); 
+			else {
+				min_empty_i = i; 
+				min_empty_j = j;
+				break;  
 			}
 		}
+	}
+
+	for (k = 0; k < SIZE; k++) {
+		if (!(p[min_empty_i][min_empty_j][k])) { //Skip blatantly invalid placements, with 2 numbers in same row, col, or quadrant
+			continue; 
+		}
+		closure[min_empty_i][min_empty_j] = ONE + k; //Place (k+1) on board at pos (i,j) 
+		p_clone = clone_possible(p); 
+		all_solns_helper(closure, p_clone, solns); //Recursive call after attempting to place
+		//closure[i][j] = EMPTY; 
+		free_possible(p_clone); 
 	}
 
 	free_sudoku(closure); //We searched all possible placements starting with sudoku s, so free the lvl0 closure
@@ -329,6 +343,26 @@ void print_sudoku(sudoku s) {
 	printf("%s", MID); //Print bottom 
 }
 
+void print_possible(possible p, sudoku s){ //Print which placements have been eliminated
+	int i, j, k; 
+
+	for (i = 0; i < SIZE; i++) {
+		printf("Row %d:", i); 
+		for (j = 0; j < SIZE; j++) {
+			if (s[i][j] == EMPTY) {
+				printf(" Col %d:", j); 
+				for (k = 0 ; k < SIZE; k++) {
+					if (p[i][j][k] == false) {
+						printf(" %c", ONE + k); 
+					}
+				}
+			}
+		}
+		printf("\n"); 
+	}
+
+}
+
 void print_soln_list(list* solns) { //Must be passed a list containing sudoku objects. Will print them all 
 
 	node* tmp = solns->head; 
@@ -340,6 +374,29 @@ void print_soln_list(list* solns) { //Must be passed a list containing sudoku ob
 		tmp = tmp->next; 
 	}
 
+}
+
+void print_soln_list_stats(list* solns) { //Must be passed a list containing sudoku objects. Will print them all 
+
+	node* tmp = solns->head; 
+	int i = 0; 
+
+	while (tmp != NULL) {
+		printf("Soln # %d:\n", ++i); 
+		print_sudoku((sudoku)(tmp->data)); 	
+		printf("Statistics for lvl 1 soln #%d:\n", i); 
+		print_sudoku_stats((sudoku)(tmp->data)); 
+		tmp = tmp->next; 
+	}
+
+
+}
+
+void print_sudoku_stats(sudoku s) {
+	int empty_cnt = num_empty(s); 
+	printf("Total # of fields: %d\n", SIZE*SIZE); 
+	printf("Fields filled: %6d\n", SIZE*SIZE - empty_cnt); 
+	printf("Fields empty: %7d\n", empty_cnt); 
 }
 
 sudoku sudoku_from_file(FILE* infile) {

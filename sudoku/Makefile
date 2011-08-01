@@ -1,10 +1,10 @@
 CMD=gcc
-OPTS=-g -Wall --coverage
+OPTS=-g -Wall
 IN=main.c modules/*.c
 OUT=solve_sudoku
 LIBS=-lm
 FILES=main.c modules/*.c include/*.h
-OPTIM=-O5
+OPTIM=-O0
 
 
 solve_sudoku: $(FILES)

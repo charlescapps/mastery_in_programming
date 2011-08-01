@@ -24,24 +24,36 @@ int main(int argc, char** args) {
 
 	FILE* input_file = fopen(args[1], "r"); //Open input for read-only
 
-	sudoku s = sudoku_from_file(input_file); 
-
-	printf("Input sudoku:\n"); 
+	sudoku s = sudoku_from_file(input_file); //Get sudoku input from file
+	
+	//****************Print initial sudoku field************************
+	printf("Initial, incomplete input field:\n"); 
 	print_sudoku(s); 
 
 	int empty_cnt = num_empty(s); 
-	printf("Total # of fields: %d\n", SIZE*SIZE); 
-	printf("Fields filled: %d\n", SIZE*SIZE - empty_cnt); 
-	printf("Fields empty: %d\n", empty_cnt); 
+	printf("Statistics initially:\n"); 
+	print_sudoku_stats(s); 
 
+	//***************Get lvl0 solution and print result*****************
 	sudoku soln = get_lvl0_soln(s); 
+	empty_cnt = num_empty(soln); 
 
-	printf("\nLevel 0 Solution:\n"); 
-	print_sudoku(soln); 
+	if (empty_cnt <= 0) {
 
-	printf("\nAll solutions:\n"); 
+		printf("\nSudoku level 0 sudoku board.\n"); 
+		print_sudoku(soln); 
+
+		printf("Statistics Sudoku level 0:\n"); 
+		print_sudoku_stats(soln); 
+
+		printf("Field was solvable with level 0\n"); 
+		return 0; 
+	}
+
+	//***If lvl0 didn't solve the field, get all solutions and print them***
+	printf("\nLvl 1 solutions:\n"); 
 	list* solns = get_all_solns(s); 
-	print_soln_list(solns); 	
+	print_soln_list_stats(solns); 	
 
 	return 0; 
 }
