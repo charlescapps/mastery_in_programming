@@ -1,6 +1,7 @@
 #include "../include/scc.h"
 
 static const int MAX_LINE_SIZE = 128; //User shouldn't need to enter 128 chars! 
+static int tarj_number; 
 
 vertex* new_vertex(int name) {
 	vertex* v = (vertex*)malloc(sizeof(vertex)); 
@@ -57,16 +58,39 @@ vertex* build_graph_from_stdin(list* v_list) { //Function to build a graph from 
 	return entry; 
 }
 
-void get_sccs(vertex* v, list* sccs, int num, list* stack, list* graph) { //Tarjan's algorithm. Populates a list of lists of nodes, i.e. a list of vertices for each SCC. 
+void get_sccs(vertex* entry, list* sccs, list* graph) { //Finds SCCs starting at the given entry point. Populates list* sccs with the SCCs. 
+
+	list* stack = new_list(&free_vertex);  //Allocate empty stack of vertices
+	tarj_number = 0; 
+
+	get_sccs_helper(entry, sccs, stack, graph); //First get the SCCs starting at given entry point 
+
+	node* n = graph->head;
+	vertex* v; 
+
+	while (n != NULL) { //Call get_sccs_helper on every connected component of the graph
+		v = (vertex*)(n->data);
+		if (v->tarjan_num < 0) {  //If the vertex hasn't been numbered
+			free_nodes(stack); //Free the nodes of the stack, without deleting the vertices in the graph!!
+			stack = new_list(&free_vertex); 
+			tarj_number = 0; 
+			get_sccs_helper(v, sccs, stack, graph); 
+		} 	
+		n = n->next; 
+	} 
+
+}
+
+void get_sccs_helper(vertex* v, list* sccs, list* stack, list* graph) { //Tarjan's algorithm. Populates a list of lists of nodes, i.e. a list of vertices for each SCC. 
 
 	if (v == NULL || sccs == NULL || stack == NULL || graph == NULL) {
 		fprintf(stderr, "Error: get_sccs passed a NULL list to populate!\n");
 		return;  
 	}
 
-	v->tarjan_low = v->tarjan_num = ++num; //Increment "global" integer num and assign to lowlink and number
+	v->tarjan_low = v->tarjan_num = ++tarj_number; //Increment global integer tarj_number and assign to lowlink and number
 	
-	add_to_list(stack, v); //Add entry to top of stack	
+	add_to_list(stack, v); //Add v to top of stack	
 
 	node* tmp = v->adjlist->head; 
 	vertex* w; 
@@ -74,11 +98,11 @@ void get_sccs(vertex* v, list* sccs, int num, list* stack, list* graph) { //Tarj
 	while (tmp != NULL) { //For each vertex in adjacency list of v
 		w = (vertex*)(tmp->data); 
 		if (w->tarjan_num < 0) { //If it's undiscovered
-			get_sccs(w, sccs, num, stack, graph); 
+			get_sccs_helper(w, sccs, stack, graph); 
 			v->tarjan_low = MIN(v->tarjan_low, w->tarjan_low); 
 		}
 		else if (w->tarjan_num < v->tarjan_num) {
-			if (contains_vertex(w->name, stack)) {//If w is on the stack somewhere
+			if (contains_vertex(w->name, stack) != NULL) {//If w is on the stack somewhere
 				v->tarjan_low = MIN(v->tarjan_low, w->tarjan_num); 
 			}			
 		}
@@ -100,17 +124,6 @@ void get_sccs(vertex* v, list* sccs, int num, list* stack, list* graph) { //Tarj
 		}
 	}
 
-	num = 0; 
-	free_list(stack); 
-	stack = new_list(&free_vertex); 
-	node* n = graph->head;
-	while (n != NULL) { //Call get_sccs on other connected components of the graph
-		v = (vertex*)(n->data);
-		if (v->tarjan_num < 0) {
-			get_sccs(v, sccs, num, stack, graph); 
-		} 	
-		n = n->next; 
-	} 
 
 }
 
@@ -119,7 +132,7 @@ vertex* contains_vertex(int name_to_find, list* v_list) { //Takes a graph, i.e. 
 	vertex* v_tmp; 
 	while (tmp != NULL) {
 		v_tmp = (vertex*)(tmp->data); 
-		if ( v_tmp != NULL && v_tmp->name == name_to_find) {
+		if ( (v_tmp != NULL) && (v_tmp->name == name_to_find)) {
 			return v_tmp; 
 		}
 		tmp = tmp->next; 
@@ -152,7 +165,7 @@ void print_graph(list* graph) { //Prints a graph in simple form
 
 	while (tmp != NULL) {
 		v = (vertex*)(tmp->data); 
-		printf("Node %d Adjacency List: ", v->name); 
+		printf("Node %d Adj. list: ", v->name); 
 		adj_list_tmp = v->adjlist->head; 
 		while (adj_list_tmp != NULL) {
 			printf("(%d)", ((vertex*)(adj_list_tmp->data))->name); 
@@ -164,7 +177,68 @@ void print_graph(list* graph) { //Prints a graph in simple form
 		printf("\n"); 
 		tmp = tmp->next; 	
 	}
+}
 
+void print_sccs(list* sccs) {
+	if (sccs == NULL) {
+		fprintf(stderr, "Error: NULL list of SCCs passed to print_sccs function.\n");
+		return;  
+	}
 
+	node* scc_node = sccs->head; 
+	list* scc; 
+	node* n;
+	vertex* v; 
+	int num = 0; 
+
+	while (scc_node != NULL) {
+		printf("\tSCC #%d: ", ++num); 
+		scc = (list*) (scc_node -> data); 
+		n = scc->head; 
+		while (n != NULL) {//Print all the nodes in this SCC
+			v = (vertex*)(n->data);
+			printf("(%d)", v->name); 
+			if (n->next != NULL) {
+				printf(", "); 
+			}
+			n = n -> next; 
+		}
+		printf("\n"); 
+		scc_node = scc_node -> next; 
+	} 
+
+}
+
+void print_nontrivial_sccs(list* sccs) {
+	if (sccs == NULL) {
+		fprintf(stderr, "Error: NULL list of SCCs passed to print_sccs function.\n");
+		return;  
+	}
+
+	node* scc_node = sccs->head; 
+	list* scc; 
+	node* n;
+	vertex* v; 
+	int num = 0; 
+
+	while (scc_node != NULL) {
+		scc = (list*) (scc_node -> data); 
+		if (list_size(scc) <= 1) { //Skip SCCs of size 1
+			scc_node = scc_node -> next; 
+			continue; 
+		}
+		printf("\tSCC #%d: ", ++num); 
+		n = scc->head; 
+		while (n != NULL) {//Print all the nodes in this SCC
+			v = (vertex*)(n->data);
+			printf("(%d)", v->name); 
+			if (n->next != NULL) {
+				printf(", "); 
+			}
+			n = n -> next; 
+		}
+		printf("\n"); 
+		scc_node = scc_node -> next; 
+	} 
 
 }

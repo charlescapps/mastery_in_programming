@@ -62,7 +62,41 @@ void free_list(void* the_list) { //Free up list. Takes void* as argument in case
 	}
 }
 
+void free_nodes(list* l) { //Free the nodes in a list, without freeing the data in each node. 
+	if (l == NULL) {
+		return; 
+	}
+
+	node* tmp = l->head; 
+	node* to_delete; 
+
+	while (tmp != NULL) {
+		to_delete = tmp;
+		tmp = tmp->next; 
+		free(to_delete); 		//Free the node itself
+	}
+}
+
 bool is_empty(list* l) {
 	
 	return (l == NULL || l->head == NULL); 
+}
+
+
+int list_size(list* l) { //Returns number of nodes in list. 
+	if (l == NULL) {
+		fprintf(stderr, "Error: NULL list passed to list_size"); 
+		return -1; 
+	}
+
+	node* tmp = l->head; 
+	int cnt = 0; 
+
+	while (tmp != NULL) {
+		cnt++; 
+		tmp = tmp -> next; 
+	} 
+
+	return cnt; 
+
 }

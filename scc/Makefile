@@ -4,7 +4,7 @@ IN=main.c modules/*.c
 OUT=scc
 LIBS=-lm
 FILES=main.c modules/*.c include/*.h
-OPTIM=-O5
+OPTIM=-O0
 
 
 scc: $(FILES)

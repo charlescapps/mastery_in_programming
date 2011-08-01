@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef struct node_struct node; //Forward declaration so a list can have a next pointer
 
@@ -33,6 +34,11 @@ void* pop(list* l); //Removes from front without freeing data. Returns data that
 
 void free_list(void* l); //Free up list
 
+void free_nodes(list* l); //Free the nodes in a list, without freeing the data in each node. 
+						//This is useful in the SCC homework, since we want to free up the stack w/o deleting the graph!!!
+
 bool is_empty(list* l); 
+
+int list_size(list* l); //Returns number of nodes in list. 
 
 #endif
