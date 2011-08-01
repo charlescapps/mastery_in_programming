@@ -2,6 +2,7 @@
 #define _SCC
 
 #include "list.h"
+#include "misc.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -24,8 +25,12 @@ void free_vertex(void*);
 vertex* build_graph_from_stdin(list* v_list); //Function to build a graph from stdin. Takes an empty list of vertices and populates it. 
 												//Return value is the entry-point vertex, i.e. the first vertex entered. 
 
+void get_sccs(vertex* entry, list* sccs, int num, list* stack, list* graph); //Tarjan's algorithm. Populates a list of lists of nodes, i.e. a list of vertices for each SCC. 
+
 vertex* contains_vertex(int name, list* v_list); //Takes a graph, i.e. a list of vertices. Returns NULL if that name isn't present, returns the vertex otherwise
 
 vertex* has_edge_to(int name, vertex* v); //Returns the vertex if the vertex v contains an edge to vertex 'name', otherwise returns NULL
+
+void print_graph(list* graph); //Prints a graph in simple form
 
 #endif

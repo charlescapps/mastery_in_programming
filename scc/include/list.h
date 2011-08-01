@@ -29,6 +29,10 @@ void add_to_list(list* l, void* data); //Adds node to list and returns the new h
 
 void remove_front(list* l); //Removes a node from the front and frees the data
 
+void* pop(list* l); //Removes from front without freeing data. Returns data that was at front. 
+
+void free_list(void* l); //Free up list
+
 bool is_empty(list* l); 
 
 #endif

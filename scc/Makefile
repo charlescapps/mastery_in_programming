@@ -1,5 +1,5 @@
 CMD=gcc
-OPTS=-g -Wall --coverage
+OPTS=-g -Wall
 IN=main.c modules/*.c
 OUT=scc
 LIBS=-lm

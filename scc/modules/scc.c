@@ -23,13 +23,95 @@ vertex* build_graph_from_stdin(list* v_list) { //Function to build a graph from 
 	char buffer[MAX_LINE_SIZE]; 
 	int name1 = -1, name2 = -1; 
 	vertex* entry = NULL; 
+	vertex* v_tmp1; 
+	vertex* v_tmp2; 
 
 	while (fgets(buffer, MAX_LINE_SIZE, stdin)) {//While we haven't reached EOF
+		name1 = name2 = -1; 
 		sscanf(buffer, "%d %d\n", &name1, &name2); 
-		printf("name 1: %d, name 2: %d\n", name1, name2); 
+		if (name1 < 0 || name2 < 0) {
+			printf("Invalid input. Skipping to next line\n"); 
+			continue; 
+		}
+		//printf("name 1: %d, name 2: %d\n", name1, name2); 
+
+		if ( !(v_tmp1 = contains_vertex(name1, v_list)) ) {//If the first number isn't in the vertex list
+			add_to_list(v_list, (v_tmp1 = new_vertex(name1)) ); 
+		}
+		if (!(v_tmp2 = contains_vertex(name2, v_list))) {//If the second number isn't in the vertex list
+			add_to_list(v_list, (v_tmp2 = new_vertex(name2)) ); 
+		}
+
+		if (entry == NULL) {//If the entry-point vertex (first one entered) is NULL, set it
+			entry = v_tmp1; 
+		}
+
+		if (!has_edge_to(name2, v_tmp1)) { //If there's no edge from name1 to name2, add it
+			add_to_list(v_tmp1->adjlist, v_tmp2); 
+		}
+		else {
+			printf("Warning: input specifies edge (%d, %d) twice!\n", name1, name2); 
+		}
 	}
 
 	return entry; 
+}
+
+void get_sccs(vertex* v, list* sccs, int num, list* stack, list* graph) { //Tarjan's algorithm. Populates a list of lists of nodes, i.e. a list of vertices for each SCC. 
+
+	if (v == NULL || sccs == NULL || stack == NULL || graph == NULL) {
+		fprintf(stderr, "Error: get_sccs passed a NULL list to populate!\n");
+		return;  
+	}
+
+	v->tarjan_low = v->tarjan_num = ++num; //Increment "global" integer num and assign to lowlink and number
+	
+	add_to_list(stack, v); //Add entry to top of stack	
+
+	node* tmp = v->adjlist->head; 
+	vertex* w; 
+
+	while (tmp != NULL) { //For each vertex in adjacency list of v
+		w = (vertex*)(tmp->data); 
+		if (w->tarjan_num < 0) { //If it's undiscovered
+			get_sccs(w, sccs, num, stack, graph); 
+			v->tarjan_low = MIN(v->tarjan_low, w->tarjan_low); 
+		}
+		else if (w->tarjan_num < v->tarjan_num) {
+			if (contains_vertex(w->name, stack)) {//If w is on the stack somewhere
+				v->tarjan_low = MIN(v->tarjan_low, w->tarjan_num); 
+			}			
+		}
+		tmp = tmp->next; 
+	}	
+
+	if (v->tarjan_num == v->tarjan_low) {
+		add_to_list(sccs, new_list(&free_vertex)); //Add a new SCC to the list of SCCs
+		list* new_scc = (list*)(sccs->head->data); //Head of list is the new SCC 
+		vertex* w; 
+		while ( (stack -> head != NULL) ) {
+			w = (vertex*)(stack->head->data);
+			if (w->tarjan_num >= v->tarjan_num) { //Keep popping top of stack and adding to new_scc as long as condition holds
+				add_to_list(new_scc, pop(stack)); 
+			} 
+			else {
+				break; 
+			}
+		}
+	}
+
+	num = 0; 
+	free_list(stack); 
+	stack = new_list(&free_vertex); 
+	node* n = graph->head;
+	while (n != NULL) { //Call get_sccs on other connected components of the graph
+		v = (vertex*)(n->data);
+		if (v->tarjan_num < 0) {
+			get_sccs(v, sccs, num, stack, graph); 
+		} 	
+		n = n->next; 
+	} 
+
 }
 
 vertex* contains_vertex(int name_to_find, list* v_list) { //Takes a graph, i.e. a list of vertices. Returns NULL if that name isn't present, returns the vertex otherwise
@@ -56,4 +138,33 @@ vertex* has_edge_to(int name_to_find, vertex* v){ //Returns true IFF the vertex 
 		tmp = tmp->next;
 	} 
 	return NULL; 
+}
+
+void print_graph(list* graph) { //Prints a graph in simple form
+	 if (graph == NULL) {
+		fprintf(stderr, "Error: NULL graph passed to print_graph.\n"); 
+		return; 	
+	}	
+
+	node* tmp = graph->head; 
+	node* adj_list_tmp; 
+	vertex* v; 
+
+	while (tmp != NULL) {
+		v = (vertex*)(tmp->data); 
+		printf("Node %d Adjacency List: ", v->name); 
+		adj_list_tmp = v->adjlist->head; 
+		while (adj_list_tmp != NULL) {
+			printf("(%d)", ((vertex*)(adj_list_tmp->data))->name); 
+			if (adj_list_tmp -> next != NULL) {
+				printf(", "); 
+			}
+			adj_list_tmp = adj_list_tmp -> next; 
+		}
+		printf("\n"); 
+		tmp = tmp->next; 	
+	}
+
+
+
 }
