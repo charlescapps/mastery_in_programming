@@ -46,7 +46,7 @@ int main(int argc, char** args) {
 		printf("Statistics Sudoku level 0:\n"); 
 		print_sudoku_stats(soln); 
 
-		printf("Field was solvable with level 0\n"); 
+		printf("\nField was solvable with level 0\n"); 
 		return 0; 
 	}
 

@@ -77,10 +77,11 @@ list* get_all_solns(sudoku s) {
 void all_solns_helper(sudoku s, possible p, list* solns) {
 	//print_sudoku(s); //Debugging purposes
 
+/*
 	if (solns->head != NULL) { //For now, just return if we found any solution 
 		return; 
 	}
-
+*/
 	sudoku closure = get_lvl0_soln_v2(s, p); //Get closure under lvl0 strategy to reduce search space
 
 	//print_possible(p, closure); 
@@ -388,8 +389,6 @@ void print_soln_list_stats(list* solns) { //Must be passed a list containing sud
 		print_sudoku_stats((sudoku)(tmp->data)); 
 		tmp = tmp->next; 
 	}
-
-
 }
 
 void print_sudoku_stats(sudoku s) {
