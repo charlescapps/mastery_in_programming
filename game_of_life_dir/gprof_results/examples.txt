@@ -1,0 +1,100 @@
+Here's I'll show some results of profiling with gprof after making some improvements to the code. 
+This also shows that gcc optimization levels can change the results of gprof. 
+
+Here's the initial flat profile for the game of life with optimization level 5 turned on. 
+This is before I tried to improve the code. 
+
+The neighbors_torus function, which counts the alive neighbors of a cell, takes up 95%
+of the CPU cylces, so it's the most performance-critical function. It takes 0.06 us per call. 
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 95.65      0.22     0.22  3827712     0.06     0.06  neighbors_torus
+  4.35      0.23     0.01     1024     9.77   224.61  evolve_torus
+  0.00      0.23     0.00     1025     0.00     0.00  print_game
+  0.00      0.23     0.00     1024     0.00     0.00  free_game
+  0.00      0.23     0.00        1     0.00     0.00  game_from_file
+  0.00      0.23     0.00        1     0.00     0.00  new_game
+
+Here's the same flat profile with optimization 5 again, but after making one 
+improvement to the code. Instead of accessing the number of rows in the game struct with
+game->rows every time, I made some constants at the top of the function, since the number
+of rows and cols doesn't change. 
+
+I would consider this an improvement, since neighbors_torus is now only 94.44 percent of the
+CPU cylces, and it only takes 0.04 us per call on average. 
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 94.44      0.17     0.17  3827712     0.04     0.04  neighbors_torus
+  5.56      0.18     0.01     1024     9.77   175.78  evolve_torus
+  0.00      0.18     0.00     1025     0.00     0.00  print_game
+  0.00      0.18     0.00     1024     0.00     0.00  free_game
+  0.00      0.18     0.00        1     0.00     0.00  game_from_file
+  0.00      0.18     0.00        1     0.00     0.00  new_game
+
+Next, I made a few more minor optimizations. I realized some mutually exclusive 
+cases could be else-if's instead of plain if's. I also commented out the
+check at the beginning of the function that makes sure that a row/column in the 
+right range is given. 
+
+Surprisingly, this enabled gcc to inline the neighbors_torus function! You can 
+tell this happened, because gprof no longer lists the neighbors_torus function
+at all! 
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+100.00      0.15     0.15     1024   146.48   146.48  evolve_torus
+  0.00      0.15     0.00     1025     0.00     0.00  print_game
+  0.00      0.15     0.00     1024     0.00     0.00  free_game
+  0.00      0.15     0.00        1     0.00     0.00  game_from_file
+  0.00      0.15     0.00        1     0.00     0.00  new_game
+
+Now let's see the results without any optimization on. 
+With no gcc optimization and no code improvements: 
+	neighbors_torus takes .10 us on average. 
+
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 85.11      0.40     0.40  3827712     0.10     0.10  neighbors_torus
+ 14.89      0.47     0.07     1024    68.36   458.98  evolve_torus
+  0.00      0.47     0.00     1025     0.00     0.00  new_game
+  0.00      0.47     0.00     1025     0.00     0.00  print_game
+  0.00      0.47     0.00     1024     0.00     0.00  clone_game
+  0.00      0.47     0.00     1024     0.00     0.00  free_game
+  0.00      0.47     0.00        1     0.00     0.00  game_from_file
+
+Here we have the NUM_ROWS and NUM_COLS constants used, which should reduce
+memory accesses. 
+	Strangely enough, the us/call is slightly increased! Maybe this is just 
+noise and they are about the same. Or maybe the time to create the constants 
+outweighs the benefit. 
+
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 97.73      0.43     0.43  3827712     0.11     0.11  neighbors_torus
+  2.27      0.44     0.01     1024     9.77   429.69  evolve_torus
+  0.00      0.44     0.00     1025     0.00     0.00  new_game
+  0.00      0.44     0.00     1025     0.00     0.00  print_game
+  0.00      0.44     0.00     1024     0.00     0.00  clone_game
+  0.00      0.44     0.00     1024     0.00     0.00  free_game
+  0.00      0.44     0.00        1     0.00     0.00  game_from_file
+
+Here we also used if-else when possible and commented out the bounds checking: 
+The us/call is down to .08, so it appears this is an improvement. 
+The fact that this number decreases for both optimization 5 and for optimization 0 
+is pretty good evidence that the code changes improve performance. 
+
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 88.24      0.30     0.30  3827712     0.08     0.08  neighbors_torus
+  8.82      0.33     0.03     1024    29.30   332.03  evolve_torus
+  2.94      0.34     0.01     1024     9.77     9.77  clone_game
+  0.00      0.34     0.00     1025     0.00     0.00  new_game
+  0.00      0.34     0.00     1025     0.00     0.00  print_game
+  0.00      0.34     0.00     1024     0.00     0.00  free_game
+  0.00      0.34     0.00        1     0.00     0.00  game_from_file
+

@@ -1,0 +1,128 @@
+Here is the gcov output for the evolve_torus function. 
+This function does one iteration of the game of life with wrapping like a torus. 
+Interesting to see how we gained net living cells by the end of the process. 
+53812 cells died. 53999 cells lived. Net 187 gain! 
+
+     1024:   92:game* evolve_torus(game* g) {
+        -:   93:	
+     1024:   94:	game* next = clone_game(g); //Clone game for evolution
+     1024:   94-block  0
+        -:   95:
+        -:   96:	int i, j, neighbor_cnt; 
+    44032:   97:	for (i = 0; i < g->rows; i++) {
+    43008:   97-block  0
+    44032:   97-block  1
+  3870720:   98:		for (j = 0; j < g->cols; j++) {
+    43008:   98-block  0
+  3827712:   98-block  1
+  3870720:   98-block  2
+  3827712:   99:			neighbor_cnt = neighbors_torus(g, i, j); 			
+  3827712:   99-block  0
+  3827712:  100:			if (g->board[i][j] == ALIVE) { //ALIVE case
+   131135:  101:				if (neighbor_cnt == 2 || neighbor_cnt ==3) {
+   131135:  101-block  0
+        -:  102:					; //Do nothing, stays alive
+        -:  103:				}
+        -:  104:				else {
+    53812:  105:					next->board[i][j] = DEAD; //Else it dies
+    53812:  105-block  0
+        -:  106:				}
+        -:  107:			}
+        -:  108:			else { //DEAD case
+  3696577:  109:				if (neighbor_cnt == 3) { //If it has 3 living neighbors, it comes back to life
+  3696577:  109-block  0
+    53999:  110:					next->board[i][j] = ALIVE; 
+    53999:  110-block  0
+        -:  111:				}
+        -:  112:			}
+        -:  113:		}
+        -:  114:	}
+        -:  115:
+     1024:  116:	return next; 
+     1024:  116-block  0
+        -:  117:}
+
+Here I show part of the neighbors_torus function, which counts the number of alive neighbors of a cell. 
+This is the most performance critical function. Branch probabilities are turned on. 
+	We can see that the "if (i==r || j==c)" statement fell through 11% of the time. This is exactly what we expect, 
+since 11% is close to 1/9 and the center cell that we ignore is exactly 1/9 of the 3x3 square around a cell. This 
+at least gives a sanity check that these probabilities are valid. 
+ 
+        -:  158:	int i, j, i_mod, j_mod; 
+ 15310848:  159:	for (i = r - 1; i <= r + 1; i++) {
+branch  0 taken 75%
+branch  1 taken 25% (fallthrough)
+ 45932544:  160:		for (j = c - 1; j <= c + 1; j++) { //Calculate neighbors with modulo arithmetic to use torus topology
+branch  0 taken 75%
+branch  1 taken 25% (fallthrough)
+ 34449408:  161:			if (i == r && j == c) {
+branch  0 taken 11% (fallthrough)
+branch  1 taken 89%
+  3827712:  162:				continue; //Do not count the center cell in calculation
+        -:  163:			}
+
+Here's some of the same code with gcc optimization turned off completely (-O0). 
+It's interesting that without optimization, it's considering "i==r" and "j==c" as different branches. 
+It's saying that "i==r" 33% of the time (as expected) and "j==c" 33% of the time. 
+	So to get the percentage that this if-statement is evaluated true, you have to take the product of 
+the probabilities, 33%x33% = 11%. This is the same result from above, but we have more information without
+optimization. 
+
+ 34449408:  161:			if (i == r && j == c) {
+branch  0 taken 33% (fallthrough)
+branch  1 taken 67%
+branch  2 taken 33% (fallthrough)
+branch  3 taken 67%
+
+Here's the whole loop for neighbors_cnt. 
+The single most executed line is the inner loop, line 161. 
+It was executed 45,932,544 times. Note, this sample data was generated 
+for running the game of life for 1024 evolutions on an input file of size
+42x89.
+
+If I could optimize that line, it would improve performance a lot.  
+
+Here's another sanity check. The branch on line 166 is taken 1% of the time. This branch
+happens when we're counting alive cells that wrap around the top of the rectangle. This happens
+when we're counting the neighbors of cells on the first row (1/42 rows). The center cell has 
+already been eliminated at this point, so we'd expect 3 of the 8 remaining cells to wrap around
+to the other side. (1/42)*(3/8) = .0089 = .89% ~ 1%. gcov rounds results to the nearest percent, but
+the sanity check passes. 
+
+        -:  158:	int i, j, i_mod, j_mod; 
+ 15310848:  159:	for (i = r - 1; i <= r + 1; i++) {
+branch  0 taken 75%
+branch  1 taken 25% (fallthrough)
+ 45932544:  160:		for (j = c - 1; j <= c + 1; j++) { //Calculate neighbors with modulo arithmetic to use torus topology
+branch  0 taken 75%
+branch  1 taken 25% (fallthrough)
+ 34449408:  161:			if (i == r && j == c) {
+branch  0 taken 33% (fallthrough)
+branch  1 taken 67%
+branch  2 taken 33% (fallthrough)
+branch  3 taken 67%
+  3827712:  162:				continue; //Do not count the center cell in calculation
+        -:  163:			}
+ 30621696:  164:			i_mod = i; 	
+ 30621696:  165:			j_mod = j; 
+ 30621696:  166:			if (i_mod < 0) 
+branch  0 taken 1% (fallthrough)
+branch  1 taken 99%
+   273408:  167:				i_mod = NUM_ROWS + i_mod; //i wraps around left
+ 30348288:  168:			else if (i_mod > NUM_ROWS - 1) 
+branch  0 taken 1% (fallthrough)
+branch  1 taken 99%
+   273408:  169:				i_mod -= NUM_ROWS; //i wraps around right
+ 30621696:  170:			if (j_mod < 0) 
+branch  0 taken 1% (fallthrough)
+branch  1 taken 99%
+   129024:  171:				j_mod = NUM_COLS + j_mod; //j wraps around top
+ 30492672:  172:			else if (j_mod > NUM_COLS - 1) 
+branch  0 taken 1% (fallthrough)
+branch  1 taken 99%
+   129024:  173:				j_mod -= NUM_COLS; //j wraps around right
+        -:  174:
+ 30621696:  175:			if (b[i_mod][j_mod] == ALIVE) { //If a neighbor is alive and it's not the center point
+branch  0 taken 3% (fallthrough)
+branch  1 taken 97%
+  1049080:  176:				cnt++; 

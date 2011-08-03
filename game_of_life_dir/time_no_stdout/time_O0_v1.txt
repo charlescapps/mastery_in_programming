@@ -1,0 +1,11 @@
+First Run
+----------------
+real	0m0.750s
+user	0m0.676s
+sys	0m0.000s
+
+Second Run
+----------------
+real	0m0.748s
+user	0m0.664s
+sys	0m0.016s

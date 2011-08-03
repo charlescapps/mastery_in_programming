@@ -1,0 +1,45 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+100.00      0.11     0.11     1024   107.42   107.42  evolve_torus
+  0.00      0.11     0.00     1024     0.00     0.00  free_game
+  0.00      0.11     0.00        1     0.00     0.00  game_from_file
+  0.00      0.11     0.00        1     0.00     0.00  new_game
+  0.00      0.11     0.00        1     0.00     0.00  print_game
+
+			Call graph
+
+
+granularity: each sample hit covers 4 byte(s) for 9.09% of 0.11 seconds
+
+index % time    self  children    called     name
+                0.11    0.00    1024/1024        main [2]
+[1]    100.0    0.11    0.00    1024         evolve_torus [1]
+-----------------------------------------------
+                                                 <spontaneous>
+[2]    100.0    0.00    0.11                 main [2]
+                0.11    0.00    1024/1024        evolve_torus [1]
+                0.00    0.00    1024/1024        free_game [3]
+                0.00    0.00       1/1           game_from_file [4]
+                0.00    0.00       1/1           print_game [6]
+-----------------------------------------------
+                0.00    0.00    1024/1024        main [2]
+[3]      0.0    0.00    0.00    1024         free_game [3]
+-----------------------------------------------
+                0.00    0.00       1/1           main [2]
+[4]      0.0    0.00    0.00       1         game_from_file [4]
+                0.00    0.00       1/1           new_game [5]
+-----------------------------------------------
+                0.00    0.00       1/1           game_from_file [4]
+[5]      0.0    0.00    0.00       1         new_game [5]
+-----------------------------------------------
+                0.00    0.00       1/1           main [2]
+[6]      0.0    0.00    0.00       1         print_game [6]
+-----------------------------------------------
+
+Index by function name
+
+   [1] evolve_torus            [4] game_from_file          [6] print_game
+   [3] free_game               [5] new_game

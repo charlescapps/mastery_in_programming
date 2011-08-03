@@ -1,0 +1,18 @@
+#C Back-rake
+#C Back-rake
+#C 
+#C This is a simple combination of 3 glider rakes
+#C whose gliders are aligned to form MWSS traveling
+#C in the opposite direction. This is well-known. 
+#C It is fun to collide the stream with random junk,
+#C partly because the source is rarely destroyed.
+#C 
+#C Source: MWSSRAK2.LIF, Alan Hensel's lifep collection from his Game of Life page
+x = 48, y = 65, rule = B3/S23
+26b2o8bo$25b4o8bo$25b2ob2o3bo3bo$27b2o5b4o4$33bo$34b2o$35bo$35bo$34bo3$
+36bo$37bo$18bo14bo3bo$19bo14b4o$15bo3bo$16b4o5$13b4o$12bo3bo$16bo14b4o$
+15bo14bo3bo$34bo$33bo3$31bo$32bo$32bo$31b2o$30bo$3o$2bo$bo$24b2o5b4o$22b
+2ob2o3bo3bo$5b3o14b4o8bo$7bo15b2o8bo$6bo2$37b2o5b4o$10b3o22b2ob2o3bo3bo
+$12bo22b4o8bo$11bo24b2o8bo2$34bo$15b3o15b2o8b2o$17bo14bo9bo2bo$16bo16b5o
+4bo2bo$34b4o3b2ob2o$37bo4b2o$20b3o$22bo$21bo$44b4o$29bo13bo3bo$30bo16bo
+$26bo3bo15bo$27b4o!

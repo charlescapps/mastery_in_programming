@@ -1,0 +1,269 @@
+        -:    0:Source:modules/game.c
+        -:    0:Programs:2
+        -:    1:#include "../include/game.h"
+        -:    2:
+        -:    3:const char ALIVE = 'O'; 
+        -:    4:const char DEAD = ' ';
+        -:    5:const char* INPUT_FILE_ALIVE = "O"; 
+        -:    6:const char* INPUT_FILE_DEAD = "X";
+        -:    7:
+function new_game called 1025 returned 100% blocks executed 100%
+     1025:    8:game* new_game(int rows, int cols) {
+        -:    9:
+     1025:   10:	char** game_board = (char**)malloc(rows*sizeof(char*)); //Allocate each pointer to a row
+        -:   11:
+        -:   12:	int i;
+    44075:   13:	for ( i = 0; i < rows; i++) {
+branch  0 taken 98%
+branch  1 taken 2% (fallthrough)
+    43050:   14:		game_board[i] = (char*)malloc((cols+1)*sizeof(char)); //Allocate each row of chars
+    43050:   15:		memset(game_board[i], DEAD, (cols)*sizeof(char));
+    43050:   16:		game_board[i][cols] = '\0'; //end each row with null character 
+        -:   17:	}
+        -:   18:
+     1025:   19:	game* tmp_game = (game*)malloc(sizeof(game));
+     1025:   20:	tmp_game->board = game_board;  
+     1025:   21:	tmp_game->rows = rows; 
+     1025:   22:	tmp_game->cols = cols; 
+        -:   23:
+     1025:   24:	return tmp_game; 
+        -:   25:}
+        -:   26:
+function clone_game called 1024 returned 100% blocks executed 100%
+     1024:   27:game* clone_game(game* g) {
+     1024:   28:	game* clone = new_game(g->rows, g->cols); 
+call    0 returned 100%
+        -:   29:
+        -:   30:	int i; 
+    44032:   31:	for (i = 0; i < g->rows; i++) {
+branch  0 taken 98%
+branch  1 taken 2% (fallthrough)
+    43008:   32:		strcpy(clone->board[i], g->board[i]); 
+        -:   33:	}	
+        -:   34:
+     1024:   35:	return clone; 
+        -:   36:}
+        -:   37:
+function free_game called 1024 returned 100% blocks executed 100%
+     1024:   38:void free_game(game* g) {
+        -:   39:
+        -:   40:	int i; 
+    44032:   41:	for (i =0; i < g->rows; i++) { //Free each row
+branch  0 taken 98%
+branch  1 taken 2% (fallthrough)
+    43008:   42:		free(g->board[i]); 
+        -:   43:	}
+        -:   44:
+     1024:   45:	free(g->board); //Free the board
+        -:   46:
+     1024:   47:	free(g); //Free the game
+     1024:   48:}
+        -:   49:
+function print_game called 1025 returned 100% blocks executed 100%
+     1025:   50:void print_game(game* g) {
+        -:   51:
+     1025:   52:	char top[(g->cols)+1]; //Top-sides
+     1025:   53:	memset(top, '-', (g->cols)*sizeof(char)); //Set to '-'
+     1025:   54:	top[g->cols] = '\0'; //End with null char
+     1025:   55:	printf("+%s+\n", top); //Print top
+call    0 returned 100%
+        -:   56:
+        -:   57:	int i;
+    44075:   58:	for (i = 0; i < g->rows; i++) { //Print each row
+branch  0 taken 98%
+branch  1 taken 2% (fallthrough)
+    43050:   59:		printf("|%s|\n", g->board[i]); 
+call    0 returned 100%
+        -:   60:	}	
+        -:   61:
+     1025:   62:	printf("+%s+\n", top); //Print bottom
+call    0 returned 100%
+     1025:   63:}
+        -:   64:
+function evolve called 0 returned 0% blocks executed 0%
+    #####:   65:game* evolve(game* g) {
+        -:   66:	
+    #####:   67:	game* next = clone_game(g); //Clone game for evolution
+call    0 never executed
+        -:   68:
+        -:   69:	int i, j, neighbor_cnt; 
+    #####:   70:	for (i = 0; i < g->rows; i++) {
+branch  0 never executed
+branch  1 never executed
+    #####:   71:		for (j = 0; j < g->cols; j++) {
+branch  0 never executed
+branch  1 never executed
+    #####:   72:			neighbor_cnt = neighbors(g, i, j); 			
+call    0 never executed
+    #####:   73:			if (g->board[i][j] == ALIVE) { //ALIVE case
+branch  0 never executed
+branch  1 never executed
+    #####:   74:				if (neighbor_cnt == 2 || neighbor_cnt ==3) {
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+        -:   75:					; //Do nothing, stays alive
+        -:   76:				}
+        -:   77:				else {
+    #####:   78:					next->board[i][j] = DEAD; //Else it dies
+        -:   79:				}
+        -:   80:			}
+        -:   81:			else { //DEAD case
+    #####:   82:				if (neighbor_cnt == 3) { //If it has 3 living neighbors, it comes back to life
+branch  0 never executed
+branch  1 never executed
+    #####:   83:					next->board[i][j] = ALIVE; 
+        -:   84:				}
+        -:   85:			}
+        -:   86:		}
+        -:   87:	}
+        -:   88:
+    #####:   89:	return next; 
+        -:   90:}
+        -:   91:
+function evolve_torus called 1024 returned 100% blocks executed 100%
+     1024:   92:game* evolve_torus(game* g) {
+        -:   93:	
+     1024:   94:	game* next = clone_game(g); //Clone game for evolution
+call    0 returned 100%
+        -:   95:
+        -:   96:	int i, j, neighbor_cnt; 
+    44032:   97:	for (i = 0; i < g->rows; i++) {
+branch  0 taken 98%
+branch  1 taken 2% (fallthrough)
+  3870720:   98:		for (j = 0; j < g->cols; j++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+  3827712:   99:			neighbor_cnt = neighbors_torus(g, i, j); 			
+call    0 returned 100%
+  3827712:  100:			if (g->board[i][j] == ALIVE) { //ALIVE case
+branch  0 taken 3% (fallthrough)
+branch  1 taken 97%
+   131135:  101:				if (neighbor_cnt == 2 || neighbor_cnt ==3) {
+branch  0 taken 69% (fallthrough)
+branch  1 taken 31%
+branch  2 taken 60% (fallthrough)
+branch  3 taken 40%
+        -:  102:					; //Do nothing, stays alive
+        -:  103:				}
+        -:  104:				else {
+    53812:  105:					next->board[i][j] = DEAD; //Else it dies
+        -:  106:				}
+        -:  107:			}
+        -:  108:			else { //DEAD case
+  3696577:  109:				if (neighbor_cnt == 3) { //If it has 3 living neighbors, it comes back to life
+branch  0 taken 1% (fallthrough)
+branch  1 taken 99%
+    53999:  110:					next->board[i][j] = ALIVE; 
+        -:  111:				}
+        -:  112:			}
+        -:  113:		}
+        -:  114:	}
+        -:  115:
+     1024:  116:	return next; 
+        -:  117:}
+        -:  118:
+function neighbors called 0 returned 0% blocks executed 0%
+    #####:  119:int neighbors(game* g, int r, int c) {
+    #####:  120:	if (r < 0 || r > (g->rows - 1) || c < 0 || c > (g->cols - 1)) {
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+branch  7 never executed
+    #####:  121:		printf("Invalid row or col passed to neighbors function.\n"); 
+call    0 never executed
+    #####:  122:		return -1; 
+        -:  123:	}
+        -:  124:
+    #####:  125:	int cnt = 0; 
+        -:  126:
+    #####:  127:	char** b = g->board; 
+        -:  128:
+        -:  129:	int i, j; 
+    #####:  130:	int r_lb = MAX(0, r-1), r_ub = MIN(g->rows - 1, r + 1); //Must have 0 <= r < rows 
+    #####:  131:	int c_lb = MAX(0, c-1), c_ub = MIN(g->cols - 1, c + 1); //Must have 0 <= c < cols
+    #####:  132:	for (i = r_lb; i <= r_ub; i++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  133:		for (j = c_lb; j <= c_ub; j++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  134:			if (b[i][j] == ALIVE && (i != r || j != c)) { //If a neighbor is alive and it's not the center point
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:  135:				cnt++; 
+        -:  136:			}
+        -:  137:		}	
+        -:  138:	}	
+    #####:  139:	return cnt; 
+        -:  140:}
+        -:  141:
+function neighbors_torus called 3827712 returned 100% blocks executed 100%
+  3827712:  142:int neighbors_torus(game* g, int r, int c) {
+        -:  143://Comment out error-checking for now to improve performance
+        -:  144://This is the most performance critical function
+        -:  145:/*
+        -:  146:	if (r < 0 || r > (g->rows - 1) || c < 0 || c > (g->cols - 1)) {
+        -:  147:		printf("Invalid row or col passed to neighbors functions.\n"); 
+        -:  148:		return -1; 
+        -:  149:	}
+        -:  150:*/
+  3827712:  151:	const int NUM_ROWS = g->rows; 
+  3827712:  152:	const int NUM_COLS = g->cols; 
+        -:  153:
+  3827712:  154:	int cnt = 0; 
+        -:  155:
+  3827712:  156:	char** b = g->board; 
+        -:  157:
+        -:  158:	int i, j, i_mod, j_mod; 
+ 15310848:  159:	for (i = r - 1; i <= r + 1; i++) {
+branch  0 taken 75%
+branch  1 taken 25% (fallthrough)
+ 45932544:  160:		for (j = c - 1; j <= c + 1; j++) { //Calculate neighbors with modulo arithmetic to use torus topology
+branch  0 taken 75%
+branch  1 taken 25% (fallthrough)
+ 34449408:  161:			if (i == r && j == c) {
+branch  0 taken 33% (fallthrough)
+branch  1 taken 67%
+branch  2 taken 33% (fallthrough)
+branch  3 taken 67%
+  3827712:  162:				continue; //Do not count the center cell in calculation
+        -:  163:			}
+ 30621696:  164:			i_mod = i; 	
+ 30621696:  165:			j_mod = j; 
+ 30621696:  166:			if (i_mod < 0) 
+branch  0 taken 1% (fallthrough)
+branch  1 taken 99%
+   273408:  167:				i_mod = NUM_ROWS + i_mod; //i wraps around left
+ 30348288:  168:			else if (i_mod > NUM_ROWS - 1) 
+branch  0 taken 1% (fallthrough)
+branch  1 taken 99%
+   273408:  169:				i_mod -= NUM_ROWS; //i wraps around right
+ 30621696:  170:			if (j_mod < 0) 
+branch  0 taken 1% (fallthrough)
+branch  1 taken 99%
+   129024:  171:				j_mod = NUM_COLS + j_mod; //j wraps around top
+ 30492672:  172:			else if (j_mod > NUM_COLS - 1) 
+branch  0 taken 1% (fallthrough)
+branch  1 taken 99%
+   129024:  173:				j_mod -= NUM_COLS; //j wraps around right
+        -:  174:
+ 30621696:  175:			if (b[i_mod][j_mod] == ALIVE) { //If a neighbor is alive and it's not the center point
+branch  0 taken 3% (fallthrough)
+branch  1 taken 97%
+  1049080:  176:				cnt++; 
+        -:  177:			}
+        -:  178:		}	
+        -:  179:	}	
+  3827712:  180:	return cnt; 
+        -:  181:
+        -:  182:}

@@ -1,0 +1,184 @@
+        -:    0:Source:main.c
+        -:    0:Programs:2
+        -:    1:#include <stdio.h>
+        -:    2:#include <stdlib.h>
+        -:    3:#include <string.h>
+        -:    4:#include <unistd.h>
+        -:    5:
+        -:    6:#include "include/game.h"
+        -:    7:
+        -:    8:const char* USAGE = "game_of_life <num_rows> <num_cols> <input_file> <num_evolutions> [<pause_time_ms>] [--help | -?]\n" 
+        -:    9:					"\tnum_rows : specify number of rows in game of life <= 1024.\n" 
+        -:   10:					"\tnum_cols : specify number of cols in game of life <= 1024.\n"
+        -:   11:					"\tinput_file : specify input file name. If file does not contain a rectangle of O's and X's with given rows/cols an error will occur.\n" 
+        -:   12:					"\tnum_evolutions : specify number of iterations to perform in game of life <= 100000.\n"
+        -:   13:					"\tpause_time_ms : specify time in milliseconds to pause between each evolution for your viewing pleasure\n"
+        -:   14:					"\t--help or -? : show this usage and exit\n"; 
+        -:   15:
+        -:   16:const int MAX_ROWS_COLS = 1024; //max allowed rows / cols
+        -:   17:const int MAX_EVOLUTIONS = 100000; //max allowed iterations
+        -:   18:
+        -:   19://game is a typedef for char**, see game section (from game.h) 
+        -:   20:game* game_from_file(FILE* in, int num_rows, int num_cols); //get an initial configuration for game of life from a text file 
+        -:   21:
+function main called 1 returned 100% blocks executed 76%
+        1:   22:int main(int argc, char** args) {
+        -:   23:
+        -:   24:	//If user gives wrong number of arguments or a help command is given, print USAGE and exit
+        1:   25:	if ((argc != 5 && argc != 6) || strcmp(args[1], "-?") == 0 || strcmp(args[1], "--help") == 0 ) {
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+branch  2 taken 100% (fallthrough)
+branch  3 taken 0%
+branch  4 taken 100% (fallthrough)
+branch  5 taken 0%
+branch  6 taken 0% (fallthrough)
+branch  7 taken 100%
+    #####:   26:		printf("%s", USAGE); 
+call    0 never executed
+    #####:   27:		exit(0); 
+call    0 never executed
+        -:   28:	}
+        -:   29:
+        1:   30:	int rows = atoi(args[1]); //num rows is first arg
+call    0 returned 100%
+        1:   31:	int cols = atoi(args[2]); //num cols is second arg
+call    0 returned 100%
+        1:   32:	char* infile_str = args[3]; //file name is third arg
+        1:   33:	int num_evolutions = atoi(args[4]); //number of evolutions is last arg	
+call    0 returned 100%
+        1:   34:	unsigned int pause_time = 0; //Default pause
+        -:   35:
+        1:   36:	if (argc == 6 ) { //If the optional pause time argument is present
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        1:   37:		pause_time = atoi(args[5])*1000; //Convert milliseconds to microseconds for usleep function
+call    0 returned 100%
+        -:   38:	}
+        -:   39:
+        1:   40:	if (rows < 1 || rows > MAX_ROWS_COLS || cols < 1 || cols > MAX_ROWS_COLS) {//If invalid number of rows / cols is given, exit
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+branch  2 taken 100% (fallthrough)
+branch  3 taken 0%
+branch  4 taken 100% (fallthrough)
+branch  5 taken 0%
+branch  6 taken 0% (fallthrough)
+branch  7 taken 100%
+    #####:   41:		printf("Invalid integer given for row or column.\n\n%s", USAGE); 
+call    0 never executed
+    #####:   42:		exit(1); 
+call    0 never executed
+        -:   43:	}
+        1:   44:	if (num_evolutions < 0 || num_evolutions > MAX_EVOLUTIONS) {
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+branch  2 taken 0% (fallthrough)
+branch  3 taken 100%
+    #####:   45:		printf("Invalid number of evolutions given.\n\n%s", USAGE); 
+call    0 never executed
+    #####:   46:		exit(1); 
+call    0 never executed
+        -:   47:	}
+        -:   48:
+        1:   49:	FILE* infile = fopen(infile_str, "r"); //Open read-only 
+call    0 returned 100%
+        -:   50:
+        1:   51:	if (infile == NULL) {
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:   52:		printf("Error opening file '%s'!\n", infile_str); 
+call    0 never executed
+    #####:   53:		exit(1); 
+call    0 never executed
+        -:   54:	}
+        -:   55:	
+        -:   56:	game* my_game; 	
+        -:   57:
+        1:   58:	if ( NULL == (my_game = game_from_file(infile, rows, cols)) ) { //Get starting configuration from a file
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+    #####:   59:		printf("%s", "An error occurred while getting initial game from file. Exiting...\n"); 
+call    0 never executed
+    #####:   60:		exit(1); 
+call    0 never executed
+        -:   61:	}
+        -:   62:
+        1:   63:	printf("****************INITIAL GAME****************\n"); 
+call    0 returned 100%
+        1:   64:	print_game(my_game); 
+call    0 returned 100%
+        -:   65:
+        -:   66:	//Evolve num_evolutions times
+        -:   67:	game* prev_game;
+        -:   68:	int i;
+     1025:   69:	for (i = 0; i < num_evolutions; i++) {
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+     1024:   70:		prev_game = my_game; //Store old game so it can be freed
+     1024:   71:		my_game = evolve_torus(my_game); //Evolve 1 step
+call    0 returned 100%
+     1024:   72:		printf("****************EVOLUTION %d****************\n", i + 1); 
+call    0 returned 100%
+     1024:   73:		print_game(my_game); //Print game
+call    0 returned 100%
+     1024:   74:		free_game(prev_game); //Free previous game
+call    0 returned 100%
+     1024:   75:		usleep(pause_time); 
+call    0 returned 100%
+        -:   76:	}
+        -:   77:
+        1:   78:	return 0; 
+        -:   79:}
+        -:   80:
+function game_from_file called 1 returned 100% blocks executed 78%
+        1:   81:game* game_from_file(FILE* infile, int rows, int cols) {
+        1:   82:	char buffer[MAX_ROWS_COLS + 1]; // need to check if row is larger than expected so allocate larger buffer
+        1:   83:	game* g = new_game(rows, cols); 
+call    0 returned 100%
+        -:   84:	char* tmp; 
+        -:   85:
+        -:   86:	int i, len; 
+       43:   87:	for (i = 0; i < rows; i++) {
+branch  0 taken 98%
+branch  1 taken 2% (fallthrough)
+       42:   88:		if (NULL == fgets(buffer, MAX_ROWS_COLS + 1, infile)) {
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+    #####:   89:			printf("Reached end-of-file before reading in %d rows.\n", rows); 
+call    0 never executed
+    #####:   90:			return NULL; //file didn't have proper number of rows. Return NULL	
+        -:   91:		}
+        -:   92:
+       42:   93:		len = strlen(buffer); 
+        -:   94:
+       42:   95:		if (buffer[len - 1] == '\n') { //fgets puts the endline in buffer, must remove
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+       42:   96:			buffer[len - 1] = '\0';
+        -:   97:		}
+        -:   98:
+       42:   99:		if (strlen(buffer) != cols) {
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  100:			printf("%s", "Number of columns in file does not match given arg!\n"); 
+call    0 never executed
+    #####:  101:			return NULL; 
+        -:  102:		}
+        -:  103:
+       42:  104:		strcpy(g->board[i], buffer); //copy buffer to game array
+        -:  105:
+     3776:  106:		while ( (tmp = strstr(g->board[i], INPUT_FILE_DEAD) ) ) {//Replace the X's in the input file with blanks
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+     3692:  107:			*tmp = DEAD; 
+        -:  108:		}
+        -:  109:	}
+        -:  110:
+        -:  111:
+        1:  112:	return g; 
+        -:  113:		
+        -:  114:		
+        -:  115:}

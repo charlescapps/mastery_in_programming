@@ -1,0 +1,50 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+100.00      0.29     0.29  3827712     0.08     0.08  neighbors_torus
+  0.00      0.29     0.00     1024     0.00   283.20  evolve_torus
+  0.00      0.29     0.00     1024     0.00     0.00  free_game
+  0.00      0.29     0.00        1     0.00     0.00  game_from_file
+  0.00      0.29     0.00        1     0.00     0.00  new_game
+  0.00      0.29     0.00        1     0.00     0.00  print_game
+
+			Call graph
+
+
+granularity: each sample hit covers 4 byte(s) for 3.45% of 0.29 seconds
+
+index % time    self  children    called     name
+                0.29    0.00 3827712/3827712     evolve_torus [2]
+[1]    100.0    0.29    0.00 3827712         neighbors_torus [1]
+-----------------------------------------------
+                0.00    0.29    1024/1024        main [3]
+[2]    100.0    0.00    0.29    1024         evolve_torus [2]
+                0.29    0.00 3827712/3827712     neighbors_torus [1]
+-----------------------------------------------
+                                                 <spontaneous>
+[3]    100.0    0.00    0.29                 main [3]
+                0.00    0.29    1024/1024        evolve_torus [2]
+                0.00    0.00    1024/1024        free_game [4]
+                0.00    0.00       1/1           game_from_file [5]
+                0.00    0.00       1/1           print_game [7]
+-----------------------------------------------
+                0.00    0.00    1024/1024        main [3]
+[4]      0.0    0.00    0.00    1024         free_game [4]
+-----------------------------------------------
+                0.00    0.00       1/1           main [3]
+[5]      0.0    0.00    0.00       1         game_from_file [5]
+                0.00    0.00       1/1           new_game [6]
+-----------------------------------------------
+                0.00    0.00       1/1           game_from_file [5]
+[6]      0.0    0.00    0.00       1         new_game [6]
+-----------------------------------------------
+                0.00    0.00       1/1           main [3]
+[7]      0.0    0.00    0.00       1         print_game [7]
+-----------------------------------------------
+
+Index by function name
+
+   [2] evolve_torus            [5] game_from_file          [6] new_game
+   [4] free_game               [1] neighbors_torus         [7] print_game
