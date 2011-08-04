@@ -1,18 +1,19 @@
 #include "../include/sudoku.h"
 
-const char* NUMBERS = "123456789"; 
 const char EMPTY = '-'; 
 const char ONE = '1'; 
 
 static const int BUFFER_SIZE = 128; 
-static const char* TOP = "  0 1 2  3 4 5  6 7 8   \n";
-static const char* MID = "+------+------+------+  \n";
+static const char* TOP = "  0 1 2  3 4 5  6 7 8   \n"; //Top of sudoku board for printing
+static const char* MID = "+------+------+------+  \n"; //Separator between rows for sudoku board
 
-sudoku get_lvl0_soln(sudoku s) {
-	sudoku soln = clone_sudoku(s);
-	possible p = new_possible(); 
-	bool entry_changed = false; 
-	bool changed = false; 
+//sudoku s: Input incomplete sudoku field
+sudoku get_lvl0_soln(sudoku s) { //Returns lvl0 solution given input sudoku field s
+
+	sudoku soln = clone_sudoku(s); //Clone so that original sudoku isn't modified
+	possible p = new_possible(); //Record possible ways to place numbers in empty squares
+	bool entry_changed = false; //Indicates a change occurred in the set of possible placements
+	bool changed = false; //Indicates something changed in one pass through the board
 
 	int i, j; 
 
@@ -21,21 +22,23 @@ sudoku get_lvl0_soln(sudoku s) {
 
 		for (i = 0; i < SIZE; i++) {
 			for (j = 0; j < SIZE; j++) {
-				entry_changed = set_possible(p[i][j], soln, i, j);
-				changed = changed || entry_changed;  	
+				entry_changed = set_possible(p[i][j], soln, i, j); //Set the possible placements for this row / column
+				changed = changed || entry_changed;  	          //Something changed this pass if ANY square changed
 
 				if (entry_changed) { //If the set of possible values changed, there's a chance there's a unique possible entry
-					soln[i][j] = get_entry(p[i][j]); 
+					soln[i][j] = get_entry(p[i][j]); //Set the only possible placement for this square, or EMPTY if there's more than one
 				}				
 			}
 		}
 
-	} while (changed && (num_empty(soln) > 0)); //While a change has been made and there are empty slots in the solution
+	} while (changed && (num_empty(soln) > 0)); //While a change has been made and there are empty squares in the solution
 
 	return soln;  
 } 
 
-sudoku get_lvl0_soln_v2(sudoku s, possible p) { //Gets the lvl0 solution and modifies the given possible object with the possible ways to place numbers
+//sudoku s: input, incomplete sudoku field to be solved
+//possible p: record of which placements are possible in each square of sudoku 's', to be populated. 
+sudoku get_lvl0_soln_v2(sudoku s, possible p) { //Returns the lvl0 solution and modifies the given possible object with the possible ways to place numbers
 
 	sudoku soln = clone_sudoku(s);
 	bool entry_changed = false; 
@@ -62,43 +65,38 @@ sudoku get_lvl0_soln_v2(sudoku s, possible p) { //Gets the lvl0 solution and mod
 	return soln;  
 }
 
-list* get_all_solns(sudoku s) {
+//sudoku s: input, incomplete sudoku field to be solved
+list* get_all_solns(sudoku s) { //Returns the list of all solutions for the given input sudoku field
 
-	list* solns = new_list(&free_sudoku); //Create a new list that knows how to free its nodes. 
+	list* solns = new_list(&free_sudoku); //Create an empty list of sudokus
 
-	possible p = new_possible(); 
+	possible p = new_possible(); //Create a new record of what placements are possible
 
-	all_solns_helper(s, p, solns); 
+	all_solns_helper(s, p, solns); //Call the recursive helper to populate solution list
 
 	return solns; 
-
 } 
 
-void all_solns_helper(sudoku s, possible p, list* solns) {
-	//print_sudoku(s); //Debugging purposes
+//sudoku s: current sudoku field we are searching for solutions
+//possible p: record of which placements are possible in each square of sudoku field s
+//list* 'solns': list to be populated with solutions to sudoku puzzle
+void all_solns_helper(sudoku s, possible p, list* solns) { //Main algorithm for getting solutions. Recursive function to sequentially place numbers on empty squares. 
 
-/*
-	if (solns->head != NULL) { //For now, just return if we found any solution 
-		return; 
-	}
-*/
 	sudoku closure = get_lvl0_soln_v2(s, p); //Get closure under lvl0 strategy to reduce search space
 
-	//print_possible(p, closure); 
-
-	if (is_impossible(p, closure)) { //If it's impossible, we made an invalid placement. 
+	if (is_impossible(p, closure)) { //If it's impossible, we made an invalid placement, so return  
 		free_sudoku(closure); 
 		return; 
 	}	
 
-	if (num_empty(closure) <= 0) { //If it's not impossible and the closure has no empty squares, we found a soln
+	if (num_empty(closure) <= 0) { //If it's not impossible and has no empty squares, we found a soln
 		add_to_list(solns, closure); 
 		return; 
 	}
 
 	int i, j, k; 
-	int min_empty_i = -1, min_empty_j = -1; 
-	possible p_clone; 
+	int min_empty_i = -1, min_empty_j = -1; //Row and col of first empty square
+	possible p_clone; //Clone possible object so we don't overwrite the current one
 
 	//Find the first i,j that is empty
 	for (i = 0; i < SIZE; i++) {
@@ -117,21 +115,24 @@ void all_solns_helper(sudoku s, possible p, list* solns) {
 		}
 	}
 
+	//Try placing 1, 2, ..., 9 in first empty square. If placed successfully, recursively call this function. 
 	for (k = 0; k < SIZE; k++) {
 		if (!(p[min_empty_i][min_empty_j][k])) { //Skip blatantly invalid placements, with 2 numbers in same row, col, or quadrant
 			continue; 
 		}
-		closure[min_empty_i][min_empty_j] = ONE + k; //Place (k+1) on board at pos (i,j) 
+		closure[min_empty_i][min_empty_j] = ONE + k; //Place number on board at first empty position
 		p_clone = clone_possible(p); 
-		all_solns_helper(closure, p_clone, solns); //Recursive call after attempting to place
-		//closure[i][j] = EMPTY; 
+		all_solns_helper(closure, p_clone, solns); //Recursive call after successful placement
 		free_possible(p_clone); 
 	}
 
-	free_sudoku(closure); //We searched all possible placements starting with sudoku s, so free the lvl0 closure
+	free_sudoku(closure); //We searched all possible placements starting with input sudoku, so free it and return
 }
 
-bool is_impossible(possible p, sudoku s) {
+//possible p: valid record of which placements are possible for sudoku field s
+//sudoku s: corresponding sudoku field 
+//Assumption: (p, s) is a valid pair of possible placements 'p' for sudoku field 's'
+bool is_impossible(possible p, sudoku s) { //Returns true IFF there exists an empty square with no possible placements
 	bool any_true = false; 
 	int i, j, k; 
 
@@ -152,7 +153,7 @@ bool is_impossible(possible p, sudoku s) {
 	return false; 
 } 
 
-void set_all_possible(sudoku s, possible p) {
+void set_all_possible(sudoku s, possible p) { //Not needed in final algorithm. Sets the possible placements from scratch. 
 
 	int i, j, k; 
 
@@ -167,6 +168,10 @@ void set_all_possible(sudoku s, possible p) {
 
 }
 
+//bool* array: array of bools recording what placements are possible. To be populated with false wherever a number placement is impossible. 
+//sudoku s: sudoku field we are checking
+//int row: Row of square we are examining
+//int col: Col of square we are examining
 bool set_possible(bool* array, sudoku s, int row, int col) {//Returns true if a change was made, false otherwise
 	bool changed = false; 
 
@@ -211,7 +216,8 @@ bool set_possible(bool* array, sudoku s, int row, int col) {//Returns true if a 
 	return changed; 
 }
 
-char get_entry(bool* array) { //Returns a char in '1', ..., '9' if there is one possibility. Otherwise, returns '-', the EMPTY char
+//bool* array: record of which placements are possible for a fixed square
+char get_entry(bool* array) { //Returns a char in '1', ..., '9' if there is exactly one possibility. Otherwise, returns '-', the EMPTY char
 
 	char entry = '-'; 
 
@@ -252,7 +258,7 @@ possible new_possible() { //New possible with entries set to true, since by defa
 	return p; 
 }
 
-bool are_sudokus_equal(sudoku s1, sudoku s2) {
+bool are_sudokus_equal(sudoku s1, sudoku s2) {//Returns true IFF s1 and s1 have the same entries in every square
 	int i, j; 
 
 	for (i = 0; i < SIZE; i++) {
@@ -266,7 +272,8 @@ bool are_sudokus_equal(sudoku s1, sudoku s2) {
 
 }
 
-possible clone_possible(possible p) {
+//possible p: input possible to be cloned
+possible clone_possible(possible p) { //Allocates a new possible object and fills it with values from input 'p'
 	possible clone = new_possible(); 
 
 	int i, j, k ;
@@ -282,7 +289,8 @@ possible clone_possible(possible p) {
 
 }
 
-void free_possible(possible p) {
+//possible p: input possible to be freed
+void free_possible(possible p) {//Frees memory for possible object p
 
 	int i, j; 
 	for (i = 0; i < SIZE; i++) {
@@ -293,7 +301,7 @@ void free_possible(possible p) {
 	}
 }
 
-sudoku new_sudoku() {
+sudoku new_sudoku() { //Allocates a new sudoku field, every square filled with EMPTY
 	sudoku s = (sudoku)malloc(sizeof(char*)*SIZE); //Allocate row pointers 
 
 	int i;
@@ -306,7 +314,8 @@ sudoku new_sudoku() {
 	return s; 
 }
 
-sudoku clone_sudoku(sudoku s) {
+//sudoku s: input sudoku field
+sudoku clone_sudoku(sudoku s) { //Returns clone of sudoku 's' with completely separate memory on heap. 
 	sudoku clone = new_sudoku(); 
 
 	int i, j; 
@@ -327,7 +336,7 @@ void free_sudoku(void* obj) { //Function to free a sudoku object. Argument is vo
 	}
 }
 
-void print_sudoku(sudoku s) {
+void print_sudoku(sudoku s) { //Prints sudoku 's' in pretty format
 
 	printf("%s", TOP);
 
@@ -370,7 +379,7 @@ void print_soln_list(list* solns) { //Must be passed a list containing sudoku ob
 	int i = 0; 
 
 	while (tmp != NULL) {
-		printf("Soln # %d:\n", ++i); 
+		printf("\nSoln # %d:\n", ++i); 
 		print_sudoku((sudoku)(tmp->data)); 	
 		tmp = tmp->next; 
 	}
@@ -383,7 +392,7 @@ void print_soln_list_stats(list* solns) { //Must be passed a list containing sud
 	int i = 0; 
 
 	while (tmp != NULL) {
-		printf("Soln # %d:\n", ++i); 
+		printf("\nSoln # %d:\n", ++i); 
 		print_sudoku((sudoku)(tmp->data)); 	
 		printf("Statistics for lvl 1 soln #%d:\n", i); 
 		print_sudoku_stats((sudoku)(tmp->data)); 
@@ -391,14 +400,14 @@ void print_soln_list_stats(list* solns) { //Must be passed a list containing sud
 	}
 }
 
-void print_sudoku_stats(sudoku s) {
+void print_sudoku_stats(sudoku s) { //Prints total # of fields, # of fields filled, and # of fields empty
 	int empty_cnt = num_empty(s); 
 	printf("Total # of fields: %d\n", SIZE*SIZE); 
 	printf("Fields filled: %6d\n", SIZE*SIZE - empty_cnt); 
 	printf("Fields empty: %7d\n", empty_cnt); 
 }
 
-sudoku sudoku_from_file(FILE* infile) {
+sudoku sudoku_from_file(FILE* infile) { //Reads a sudoku in from a file
 	char buffer[BUFFER_SIZE]; // need to check if row is larger than expected so allocate larger buffer
 	sudoku s = new_sudoku(); 
 
@@ -426,7 +435,7 @@ sudoku sudoku_from_file(FILE* infile) {
 	return s; 
 }
 
-int num_empty(sudoku s) {
+int num_empty(sudoku s) { //Returns number of empty squares in sudoku field 's'
 	int i, j, cnt = 0; 
 	for (i = 0; i < SIZE; i++) {
 		for (j = 0; j < SIZE; j++) {
@@ -436,4 +445,74 @@ int num_empty(sudoku s) {
 		}
 	}	
 	return cnt; 
+}
+
+bool is_invalid(sudoku s) { //Checks input sudoku to see if it's completely invalid, i.e. already has 2 of the same number in a row, col, or quad
+	int i, j; 
+
+	for (i = 0; i < SIZE; i++) { //Init to zero
+		for (j = 0; j < SIZE; j++) {
+			if (is_square_invalid(s, i, j)) {
+				return true; 
+			}
+		}
+	}
+
+	return false; 
+}
+
+
+bool is_square_invalid(sudoku s, int row, int col) { //Returns false if we find > 1 of any number in the square. Otherwise, returns true. 
+
+	int num_found[SIZE]; //Count how many of each number we find in same row, col, quad. 
+
+	char ch; 
+	int i, j; 
+
+	memset(num_found, 0, sizeof(int)*SIZE); //Set to zero initially
+
+	//Check current row
+	for (j = 0; j < SIZE; j++) {
+		ch = s[row][j]; 
+		if (ch != EMPTY) {
+			num_found[ch - ONE]++; 
+			if (num_found[ch - ONE] > 1) {
+				return true; 
+			} 
+		}
+	}	
+
+	memset(num_found, 0, sizeof(int)*SIZE); //Set to zero initially
+
+	//Check current col
+	for (i = 0; i < SIZE; i++) {
+		ch = s[i][col]; 
+		if (ch != EMPTY) {
+			num_found[ch - ONE]++; 
+			if (num_found[ch - ONE] > 1) {
+				return true; 
+			}
+		}
+	}
+
+	memset(num_found, 0, sizeof(int)*SIZE); //Set to zero initially
+
+	//Check current quadrant
+	int quad_row = (row / 3)*3; 
+	int quad_col = (col / 3)*3; 	
+
+	for (i = quad_row; i < quad_row + 3; i++) {
+		for (j = quad_col; j < quad_col + 3; j++) {
+			ch = s[i][j]; 
+			if (ch != EMPTY) {
+				num_found[ch - ONE]++; 
+				if (num_found[ch - ONE] > 1) {
+					return true; 
+				}
+			}
+		}
+	}
+
+	return false; 
+
 }

@@ -1,13 +1,13 @@
 #include "../include/list.h"
 
-node* new_node(void* data) {
+node* new_node(void* data) { //Allocate a new list node
 	node* n = (node*)malloc(sizeof(node)); 
 	n->data = data; 
 	n->next = NULL; 
 	return n; 
 }
 
-list* new_list(void (*free_fnc)(void*)) {
+list* new_list(void (*free_fnc)(void*)) {//Allocate a new list; free_fnc is a function pointer to a fucntion for freeing the data in the list
 	list* l = (list*) malloc(sizeof(list)); 
 	l->free_data = free_fnc; 
 	l->head = NULL; 
@@ -28,4 +28,21 @@ void remove_front(list* l) { //Removes a node from the front and frees the data
 	node* old_head = l->head; 
 	l->head = old_head->next; 
 	(*(l->free_data))(old_head); //Call function to free the old head
+}
+
+int list_size(list* l) { //Count number of nodes in a list
+
+	if (l == NULL) {
+		return 0; 
+	}
+
+	node* tmp = l->head; 
+	int cnt = 0; 
+
+	while (tmp != NULL) {
+		cnt++; 
+		tmp = tmp->next; 
+	}
+
+	return cnt; 
 }

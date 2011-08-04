@@ -16,16 +16,18 @@ typedef struct { //List type
 
 	node* head; 
 
-	void (*free_data)(void*); //Function telling list how to free a node
+	void (*free_data)(void*); //Function that frees the data in node. 
 
 } list;
 
-node* new_node(void* data); 
+node* new_node(void* data); //Allocate a new list node
 
-list* new_list(void (*free_fnc)(void*)); 
+list* new_list(void (*free_fnc)(void*)); //Allocate a new empty list. Pass in function pointer for freeing data in list
 
 void add_to_list(list* l, void* data); //Adds node to list and returns the new head
 
 void remove_front(list* l); //Removes a node from the front and frees the data
+
+int list_size(list* l); //Count number of nodes in a list
 
 #endif
